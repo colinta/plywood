@@ -2,84 +2,83 @@
 plywood
 =======
 
-```
-load('url')
-load('compress')
-doctype('html')  # only accepts literals.  use html5 please.
-html:
-  head:
-    meta(charset="utf-8")
-    meta(name="viewport", content="width=device-width; initial-scale=1.0")
-    title:
-      if title:
-        # docstrings *are* stripped of preceding whitespace (they must be
-        # indented), and the first and last newline is removed.
-        """
-        {title} |
-        """  # string intepolation is a little more heavy-duty than `.format()`, but more similar than different.
-      'Welcome'  # string literals require quotes :-/  I *might* add another way to do this...
-    compress('css'):
-      link(rel='stylesheet', type='text/css', href=static('css/reset.css'))
-      link(rel='stylesheet', type='text/css', href=static('css/welcome.css'))
-    script(src="//ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js", type="text/javascript")
-    compress('js'):
-      script(src=static("js/underscore.js"), type="text/javascript")
-      script(src=static("js/backbone.js"), type="text/javascript")
-    ieif 'lt IE 9':
-      script(src="//html5shiv.googlecode.com/svn/trunk/html5.js", type="text/javascript")
-      link(rel='stylesheet', type='text/css', href=static('css/ie.css'))
-    block('extra_head')  # blocks, and block inheritance?  of course!
-  body:
-    div(class="wrapper", id="wrapper")  # no shorthand for class and id (yet)
-      header:
-        block('header'):
-          p(class="logo"):
-          block('header_title'):
-            if user:
-              'Welcome, '{user.name}'
-            else:
-              'Welcome'
-        if current_member:
-          p(class="login"):
-            "Welcome, {current_member.preferred_name}"
-            a(href=url("logout")): 'Log Out'
-      </header>
-      nav:
-        ul:
-          block('nav'):
-            li: a(href=url("login")): 'Login'
+::
 
-      section class="breadcrumb":
-        block('breadcrumb')
+    load('url')
+    load('compress')
+    doctype('html')
+    html:
+      head:
+        meta(charset="utf-8")
+        meta(name="viewport", content="width=device-width; initial-scale=1.0")
+        title:
+          if title:
+            # docstrings *are* stripped of preceding whitespace (they must be
+            # indented), and the first and last newline is removed.
+            """
+            {title} |
+            """  # string intepolation is a little more heavy-duty than `.format()`, but more similar than different.
+          'Welcome'  # string literals require quotes :-/  I *might* add another way to do this...
+        compress('css'):
+          link(rel='stylesheet', type='text/css', href=static('css/reset.css'))
+          link(rel='stylesheet', type='text/css', href=static('css/welcome.css'))
+        script(src="//ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js", type="text/javascript")
+        compress('js'):
+          script(src=static("js/underscore.js"), type="text/javascript")
+          script(src=static("js/backbone.js"), type="text/javascript")
+        ieif 'lt IE 9':
+          script(src="//html5shiv.googlecode.com/svn/trunk/html5.js", type="text/javascript")
+          link(rel='stylesheet', type='text/css', href=static('css/ie.css'))
+        block('extra_head')  # blocks, and block inheritance?  of course!
+      body:
+        div(class="wrapper", id="wrapper")  # no shorthand for class and id (yet)
+          header:
+            block('header'):
+              p(class="logo"):
+              block('header_title'):
+                if user:
+                  'Welcome, '{user.name}'
+                else:
+                  'Welcome'
+            if current_member:
+              p(class="login"):
+                "Welcome, {current_member.preferred_name}"
+                a(href=url("logout")): 'Log Out'
+          nav:
+            ul:
+              block('nav'):
+                li: a(href=url("login")): 'Login'
 
-      section(class="main"):
-        block('messages'):
-          if messages:
-            ul(class="messages"):
-              for message in messages:
-                li(class=message.tags):  '{message}'
-        script:
-          # code literals, so that savvy editors can color the source code
-          ```javascript
-          $(document).ready(function(){
-            $("ul.messages").addClass("animate");
+          section class="breadcrumb":
+            block('breadcrumb')
 
-            var fade_out = _(function() {
-              this.addClass("fade-out")
-            }).bind($("ul.messages"))
+          section(class="main"):
+            block('messages'):
+              if messages:
+                ul(class="messages"):
+                  for message in messages:
+                    li(class=message.tags):  '{message}'
+            script:
+              # code literals, so that savvy editors can color the source code
+              ```javascript
+              $(document).ready(function(){
+                $("ul.messages").addClass("animate");
 
-            setTimeout(fade_out, 5000);
-            $("ul.messages").bind("click", fade_out);
-          });
-          ```
-        block('content')
+                var fade_out = _(function() {
+                  this.addClass("fade-out")
+                }).bind($("ul.messages"))
 
-      footer:
-        # p:
-        #   'These are comments.'
-        #   span: '|'
-        #   '&copy;2012 CrossFit'
-```
+                setTimeout(fade_out, 5000);
+                $("ul.messages").bind("click", fade_out);
+              });
+              ```
+            block('content')
+
+          footer:
+            # p:
+            #   'These are comments.'
+            #   span: '|'
+            #   '&copy;2012 CrossFit'
 
 ------------
 INSTALLATION
@@ -90,6 +89,53 @@ INSTALLATION
     $ pip install plywood
     $ ply < in.ply > out.html
 
+
+------
+SYNTAX
+------
+
+Each line starts with a statement, which can either be a function
+(``div``, ``block``) a literal (``'``, ``'''``), or a control statement (``if``,
+``else``, ``for``).
+
+Functions get called with the arguments and a "block"::
+
+    # arguments are ((), {}), block is Block()
+    p
+    # arguments are ((), {'class': 'divvy'}), block is Block()
+    div(class="divvy")
+    # arguments are (('autofocus'), {'id': 'bio'}), block is Block(Literal('This is my bio'),)
+    textarea(autofocus, id="bio"): 'This is my bio'
+
+Even if there is no "block", you'll get at the least at empty block object that
+you can call ``block.render`` on.  It will be "falsey", though, so you can check
+for the existence of a block.  The minimum "truthy" block is an empty string.
+That means ``div ''`` will give you a "truthy" block, but ``div`` will be a
+"falsey" block.
+
+You can extend the crap out of plywood, because ``div``, ``if``, ``block``, the
+whole lot, are all written as plywood extensions.  Without the builtin
+extensions, the language couldn't actually *do* anything, because it is at its
+core just a language grammar.
+
+-------
+WHY!?!?
+-------
+
+I think there is room for another templating language.
+
+Haml?  Coffekup?  Jade?  They don't seem pythonic to me.
+
+Plain-Jane HTML?  Sure, if you want.  That is, I think, the best alternative to
+plywood.
+
+Even the great django template language is HTML made *nastier* by inserting
+*additional markup*.  I looked at Jade and Haml as "yeah, you're getting there",
+but they didn't nail it.
+
+I'm unapologettically a DIY-er.  I think that sometimes wheels just need
+re-inventing!  Plus, this gave me a chance to play with language grammars, which
+I think are fun.  I'm using Modgrammar_
 
 -------
 LICENSE
@@ -102,3 +148,6 @@ Copyright (c) 2012, Colin Thomas-Arnold
 All rights reserved.
 
 See LICENSE_ for more details (it's a simplified BSD license).
+
+.. _LICENSE:      https://github.com/colinta/StrangeCase/blob/master/LICENSE
+.. _Modgrammar:   http://pypi.python.org/pypi/modgrammar
