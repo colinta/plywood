@@ -11,17 +11,17 @@ setup(
         name="plywood",
         version="v0.0.1",
         author="Colin Thomas-Arnold",
-        author_email="colinta@gmail",
+        author_email="colinta@gmail.com",
         url="https://github.com/colinta/plywood",
         install_requires=[],
 
-        # entry_points={
-        #     'console_scripts': [
-        #         'ply = plywood.__main__:run'
-        #     ]
-        # },
+        entry_points={
+            'console_scripts': [
+                'ply = plywood.__main__:run'
+            ]
+        },
 
-        description="A template language grammar that looks, feels, and works like Python",
+        description="A template language grammar inspired by the Python code aesthetic",
         long_description=read("README.rst"),
 
         packages=find_packages(),

@@ -2,23 +2,32 @@
 plywood
 =======
 
+------------
+DEMO
+------------
+
 ::
 
-    load('url')
-    load('compress')
+    load('url')  # basic function call to load in extension
+    # parentheses are optional, because things like 'if' and 'for' look
+    # better without 'em.  plywood has no "reserved words"
+    load 'compress'
+    debug = true  # yes, this template language has variable assignment
+
     doctype('html')
     html:
       head:
         meta(charset="utf-8")
-        meta(name="viewport", content="width=device-width; initial-scale=1.0")
         title:
+          # the if statement, which is a rather complicated plugin because it
+          # can be followed by any number of elif's and an optional else.
           if title:
             # docstrings *are* stripped of preceding whitespace (they must be
             # indented), and the first and last newline is removed.
             """
             {title} |
-            """  # string intepolation is a little more heavy-duty than `.format()`, but more similar than different.
-          'Welcome'  # string literals require quotes :-/  I *might* add another way to do this...
+            """  # string interpolation is a little more heavy-duty than `.format()`, but more similar than different.
+          'Welcome'  # string literals require quotes
         compress('css'):
           link(rel='stylesheet', type='text/css', href=static('css/reset.css'))
           link(rel='stylesheet', type='text/css', href=static('css/welcome.css'))
@@ -26,15 +35,21 @@ plywood
         compress('js'):
           script(src=static("js/underscore.js"), type="text/javascript")
           script(src=static("js/backbone.js"), type="text/javascript")
+        # this outputs the IE conditional, though it looks like an if statement.
+        # it's hard to tell the difference between control structures and
+        # functions that output (that's because there really *is* no difference)
         ieif 'lt IE 9':
           script(src="//html5shiv.googlecode.com/svn/trunk/html5.js", type="text/javascript")
           link(rel='stylesheet', type='text/css', href=static('css/ie.css'))
-        block('extra_head')  # blocks, and block inheritance?  of course!
+        block('extra_head')  # blocks? block inheritance?  of course!
       body:
-        div(class="wrapper", id="wrapper")  # no shorthand for class and id (yet)
+        div(class="wrapper", id="wrapper")  # no shorthand for class and id
           header:
             block('header'):
-              p(class="logo"):
+              # inlining is easy
+              p(class="logo"): 'logo'
+              # more complicated inlining
+              p: a(href=url("login")): 'Login'
               block('header_title'):
                 if user:
                   'Welcome, '{user.name}'
@@ -47,9 +62,8 @@ plywood
           nav:
             ul:
               block('nav'):
-                li: a(href=url("login")): 'Login'
 
-          section class="breadcrumb":
+          section(class="breadcrumb"):
             block('breadcrumb')
 
           section(class="main"):
@@ -78,7 +92,7 @@ plywood
             # p:
             #   'These are comments.'
             #   span: '|'
-            #   '&copy;2012 CrossFit'
+            #   '&copy;2012 colinta'
 
 ------------
 INSTALLATION
@@ -105,7 +119,7 @@ Functions get called with the arguments and a "block"::
     # arguments are ((), {'class': 'divvy'}), block is Block()
     div(class="divvy")
     # arguments are (('autofocus'), {'id': 'bio'}), block is Block(Literal('This is my bio'),)
-    textarea(autofocus, id="bio"): 'This is my bio'
+    textarea("autofocus", id="bio"): 'This is my bio'
 
 Even if there is no "block", you'll get at the least at empty block object that
 you can call ``block.render`` on.  It will be "falsey", though, so you can check
