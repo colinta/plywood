@@ -34,6 +34,9 @@ class PlywoodParens(object):
     def __repr__(self):
         return type(self).__name__ + '(' + ', '.join(repr(v) for v in self.values) + ')'
 
+    def __str__(self):
+        return type(self).__name__ + '(' + ', '.join(repr(v) for v in self.values) + ')'
+
 
 class PlywoodKvp(object):
     def __init__(self, key, value):
@@ -46,6 +49,9 @@ class PlywoodKvp(object):
     def __repr__(self):
         return type(self).__name__ + '(' + repr(self.key) + ': ' + repr(self.value) + ')'
 
+    def __str__(self):
+        return repr(self.key) + ': ' + repr(self.value) + ')'
+
 
 class PlywoodList(object):
     def __init__(self, values):
@@ -57,6 +63,9 @@ class PlywoodList(object):
     def __repr__(self):
         return type(self).__name__ + '[' + ', '.join(repr(v) for v in self.values) + ']'
 
+    def __str__(self):
+        return '[' + ', '.join(repr(v) for v in self.values) + ']'
+
 
 class PlywoodDict(object):
     def __init__(self, values):
@@ -67,6 +76,9 @@ class PlywoodDict(object):
 
     def __repr__(self):
         return type(self).__name__ + '{' + ', '.join(repr(v) for v in self.values) + '}'
+
+    def __str__(self):
+        return '{' + ', '.join(repr(v) for v in self.values) + '}'
 
 
 tokens = [
