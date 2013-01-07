@@ -23,3 +23,12 @@ print repr(Plywood('foo(bar)').run())
 print repr(Plywood('foo(bar, 1, key="value")').run())
 print repr(Plywood('{foo: bar}').run())
 print repr(Plywood('{"foo": "bar"}').run())
+print repr(Plywood("foo\nbar").run())
+print repr(Plywood("""
+foo
+"foo"
+1
+123
+bar
+foo(bar, item='value')
+""").run())
