@@ -1,5 +1,5 @@
-from plywood import plywood
+import plywood
 
 
 def run():
-    print "here"
+    return plywood.Plywood("here").parse()
