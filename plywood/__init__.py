@@ -174,7 +174,12 @@ class Plywood(object):
             token = self.consume('value')
             line.append(token)
 
+        self.figure_out_precedence(line, precedence=0)
+
         return line
+
+    def figure_out_precedence(self, line, precedence):
+        pass
 
     def consume_value(self):
         if self.test('variable'):
