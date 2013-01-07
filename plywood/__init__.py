@@ -151,6 +151,10 @@ class Plywood(object):
         }
 
     def run(self):
+        pass
+
+    def parsed(self):
+        parsed = []
         while self.buffer:
             if self.test('blankline'):
                 self.consume('blankline')
@@ -158,7 +162,10 @@ class Plywood(object):
                 self.whitespace = 'single_whitespace'
                 line = self.consume_until('eol')
                 print repr(line)
+                parsed.append(line)
                 self.consume('eol')
+
+ # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
     def consume_until(self, until_token):
         line = []
@@ -255,6 +262,8 @@ class Plywood(object):
             self.consume(self.whitespace)
             if self.whitespace == 'multiline_whitespace' and self.test('comment'):
                 self.consume('comment')
+
+ # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
     def test(self, token, **kwargs):
         method = 'test_{0}'.format(token)
