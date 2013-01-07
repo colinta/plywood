@@ -151,9 +151,9 @@ class Plywood(object):
         }
 
     def run(self):
-        pass
+        parsed = self.parse()
 
-    def parsed(self):
+    def parse(self):
         parsed = []
         while self.buffer:
             if self.test('blankline'):
@@ -161,9 +161,9 @@ class Plywood(object):
             else:
                 self.whitespace = 'single_whitespace'
                 line = self.consume_until('eol')
-                print repr(line)
                 parsed.append(line)
                 self.consume('eol')
+        return parsed
 
  # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
