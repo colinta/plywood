@@ -1,0 +1,31 @@
+# twitter bootstrap layout
+doctype(5)
+html:
+  head:
+    title: title
+    script(type='text/javascript', src='https://ajax.googleapis.com/ajax/libs/jquery/1.8.3/jquery.min.js')
+    link(rel='stylesheet', href='http://twitter.github.com/bootstrap/1.4.0/bootstrap.min.css')
+    block 'head'
+
+  body:
+    div.container:
+      div.page-header
+      div.row:
+        div.span6:
+          block 'yield'
+
+    div.container:
+      footer:
+        p "&copy; Simple Energy {date('%Y')}"
+    script(type='text/javascript'): '''javascript
+      $(document).ready(function(){
+
+        $(".rounded-img").load(function() {
+          $(this).wrap(function(){
+            return '<span class="' + $(this).attr('class') + '" style="background:url(' + $(this).attr('src') + ') no-repeat center center; width: ' + $(this).width() + 'px; height: ' + $(this).height() + 'px;" />';
+          });
+          $(this).css("opacity", "0");
+        });
+
+      });
+      '''

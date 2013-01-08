@@ -13,9 +13,10 @@ DEMO
     # better without 'em.  plywood has no "reserved words"
     load 'compress'
     debug = true  # yes, this template language has variable assignment
+    a = b = true  # and very limited assignment chaining (no tuples)
 
-    doctype('html')
-    html:
+    doctype(5)  # or doctype('strict') doctype('xhtml'), etc
+    html:  # this'll start looking a lot like jade, but with quotes and colons
       head:
         meta(charset="utf-8")
         title:
@@ -26,9 +27,11 @@ DEMO
             # indented), and the first and last newline is removed.
             """
             {title} |
-            """  # string interpolation is a little more heavy-duty than `.format()`, but more similar than different.
+            """  # string interpolation is a little more heavy-duty than
+                 # `.format()`, but more similar than different.
           'Welcome'  # string literals require quotes
         compress('css'):
+          # notice the function call in here to get the static URL
           link(rel='stylesheet', type='text/css', href=static('css/reset.css'))
           link(rel='stylesheet', type='text/css', href=static('css/welcome.css'))
         script(src="//ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js", type="text/javascript")
@@ -43,7 +46,27 @@ DEMO
           link(rel='stylesheet', type='text/css', href=static('css/ie.css'))
         block('extra_head')  # blocks? block inheritance?  of course!
       body:
-        div(class="wrapper", id="wrapper")  # no shorthand for class and id
+        div(class="wrapper", id="main-header")  # verbose
+        div.wrapper(id="main-header"):  # less verbose
+
+        # I struggled long and hard on what to do about the #id shorthands.
+        # in the end, I couldn't in good conscience call this a "python
+        # inspired" language if '#' was not the comment delimiter.  So the id
+        # shorthand is "@" instead:
+        div.wrapper@main-header:  # and yes, that '-' is part of the 'main-header' token!
+
+          # for xml usage, the token parsing will accept some gnarly-looking elements in
+          # argument lists:
+          book(xmlns='urn:loc.gov:books',
+               xmlns:isbn='urn:ISBN:0-395-36341-6'):
+               # and elements can be surrounded in '<>' if you so please:
+              isbn:number: 1568491379
+              <isbn:number>: 1568491379
+              # internally, this is called the 'NamespaceOperator'.  The can only
+              # appear *within* a VariableToken, not at the beginning or end, and
+              # no preceding or trailing whitespace.  It's implemented as an
+              # operator because that makes the implementation of unknown elements
+              # much easier.
           header:
             block('header'):
               # inlining is easy
