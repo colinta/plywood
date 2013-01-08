@@ -1,30 +1,112 @@
 import string
 import chomsky
 from chomsky import (
-    Literal, Char, Chars, StringEnd, NextIs, LineEnd,
-    Optional,
+    Literal, Char, Chars, StringEnd, LineEnd,
+    Optional, ZeroOrMore,
+    VariableGrammarType, OperatorGrammarType,
     Buffer,
-    # ParseException,
+    ParseException,
     )
 
 
-class PlywoodNumber(chomsky.Number):
-    pass
+class PlywoodNumberGrammar(chomsky.Number):
+    def to_value(self):
+        if isinstance(self.parsed, chomsky.Float):
+            return PlywoodNumber(float(str(self)))
+
+        base = 10
+        if isinstance(self.parsed, chomsky.HexadecimalInteger):
+            base = 16
+        if isinstance(self.parsed, chomsky.OctalInteger):
+            base = 8
+        if isinstance(self.parsed, chomsky.BinaryInteger):
+            base = 2
+        return PlywoodNumber(int(str(self), base))
 
 
-class PlywoodString(chomsky.String):
-    pass
+class PlywoodStringGrammar(chomsky.String):
+    def to_value(self):
+        return PlywoodString(str(self))
 
 
-class PlywoodVariable(chomsky.Variable):
-    pass
+class PlywoodVariableGrammar(chomsky.Variable):
+    __metaclass__ = VariableGrammarType
+    starts_with = Char(string.ascii_letters + '_')
+    ends_with = Chars(string.ascii_letters + '_' + string.digits, min=0)
+
+    def to_value(self):
+        return PlywoodVariable(str(self))
 
 
-class PlywoodOperator(chomsky.Grammar):
+class PlywoodOperatorGrammar(chomsky.Grammar):
+    __metaclass__ = OperatorGrammarType
     grammar = chomsky.Operator | chomsky.Assignment
+    operators = [
+        '==', '!=', '<=', '>=', '<', '>',
+        'not', 'and', 'or', '&', '|', '~', '<<', '>>',
+        '**',  '//',  '+',  '-',  '/',  '*',  '%',
+        '.',  # function call
+        '**=', '//=', '+=', '-=', '/=', '*=', '%=', '=',
+    ]
 
 
-class PlywoodParens(object):
+class PlywoodValue(object):
+    pass
+
+
+class PlywoodVariable(PlywoodValue):
+    def __init__(self, name):
+        self.name = name
+
+    def __eq__(self, other):
+        return isinstance(other, PlywoodVariable) and other.name == self.name
+
+    def __repr__(self):
+        return '{type.__name__}({self.name})'.format(type=type(self), self=self)
+
+
+class PlywoodString(PlywoodValue):
+    def __init__(self, value):
+        self.value = value
+
+    def __repr__(self):
+        return '{type.__name__}({self.value!r})'.format(type=type(self), self=self)
+
+
+class PlywoodNumber(PlywoodValue):
+    def __init__(self, value):
+        self.value = value
+
+    def __repr__(self):
+        return '{type.__name__}({self.value!r})'.format(type=type(self), self=self)
+
+
+class PlywoodOperator(PlywoodValue):
+    INDENT = ''
+
+    def __init__(self, operator, left, right):
+        self.operator = operator
+        self.left = left
+        self.right = right
+
+    def __repr__(self):
+        indent = type(self).INDENT
+        type(self).INDENT += '  '
+        retval = '{indent}{type.__name__}\n{indent}(\n{indent}  {self.left!r}\n{indent}  {self.operator!r}\n{indent}  {self.right!r}\n{indent})\n'.format(type=type(self), self=self, indent=indent)
+        type(self).INDENT = indent
+        return retval
+
+
+class PlywoodUnaryOperator(PlywoodValue):
+    def __init__(self, operator, value):
+        self.operator = operator
+        self.value = value
+
+    def __repr__(self):
+        return '{type.__name__}({self.operator!r}, {self.value!r})'.format(type=type(self), self=self)
+
+
+class PlywoodParens(PlywoodValue):
     def __init__(self, values):
         self.values = values
 
@@ -53,7 +135,7 @@ class PlywoodKvp(object):
         return repr(self.key) + ': ' + repr(self.value) + ')'
 
 
-class PlywoodList(object):
+class PlywoodList(PlywoodValue):
     def __init__(self, values):
         self.values = values
 
@@ -67,7 +149,7 @@ class PlywoodList(object):
         return '[' + ', '.join(repr(v) for v in self.values) + ']'
 
 
-class PlywoodDict(object):
+class PlywoodDict(PlywoodValue):
     def __init__(self, values):
         self.values = values
 
@@ -109,11 +191,11 @@ class Plywood(object):
     }
 
     matchers = {
-        'comment': Literal('#') + NextIs(LineEnd()) | Char(),
-        'number': PlywoodNumber,
-        'string': PlywoodString,
+        'comment': Literal('#') + ZeroOrMore(Char('\r\n', inverse=True)) + LineEnd(),
+        'number': PlywoodNumberGrammar,
+        'string': PlywoodStringGrammar,
 
-        'operator': PlywoodOperator,
+        'operator': PlywoodOperatorGrammar,
 
         ',': Char(','),
         ':': Char(':'),
@@ -135,7 +217,7 @@ class Plywood(object):
     })
 
     matchers.update({
-        'blankline': Chars(' \t') + Optional(matchers['comment']) + matchers['eol'],
+        'blankline': Optional(Chars(' \t')) + Optional(matchers['comment']) + matchers['eol'],
     })
 
     def __init__(self, input, parent=None):
@@ -151,7 +233,7 @@ class Plywood(object):
         }
 
     def run(self):
-        parsed = self.parse()
+        return self.parse()
 
     def parse(self):
         parsed = []
@@ -167,36 +249,122 @@ class Plywood(object):
 
  # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
+    MAX_PRECEDENCE = 20
+    LTR = 1
+    RTL = 2
+    PRECEDENCE = {
+        'unary': (12, RTL),
+        '.':     (11, LTR),
+        '[':     (11, LTR),
+        '(':     (11, LTR),
+        '@':     (11, LTR),
+        '**':    (10, RTL),
+        '&':     (9, LTR),
+        '|':     (8, LTR),
+        '//':    (7, LTR),
+        '/':     (7, LTR),
+        '*':     (7, LTR),
+        '+':     (6, LTR),
+        '-':     (6, LTR),
+        '%':     (5, LTR),
+        '<<':    (4, LTR),
+        '>>':    (4, LTR),
+        '==':    (3, LTR),
+        '!=':    (3, LTR),
+        '<=':    (3, LTR),
+        '>=':    (3, LTR),
+        '<':     (3, LTR),
+        '>':     (3, LTR),
+        'and':   (2, LTR),
+        'or':    (1, LTR),
+    }
+
+    def operator_precedence(self, op):
+        key = str(op)
+        return self.PRECEDENCE[key]
+
     def consume_until(self, until_token):
         line = []
 
         while not self.test(until_token):
-            token = self.consume('value')
+            token = self.consume('token')
             line.append(token)
 
-        self.figure_out_precedence(line, precedence=0)
+        if line:
+            return self.figure_out_precedence(line)[0]
+        return None
 
-        return line
+    DEFAULT_PRECEDENCE = (0, LTR)
 
-    def figure_out_precedence(self, line, precedence):
-        pass
+    def figure_out_precedence(self, line, index=0, precedence=DEFAULT_PRECEDENCE):
+        """
+        This method is a process of reducing a list of tokens into one value. It
+        is responsible for most of the language grammar, like operator
+        precendence, where special syntaxes like keyword arguments are allowed,
+        and consuming blocks.
 
-    def consume_value(self):
-        if self.test('variable'):
-            retval = self.consume('variable')
-        elif self.test('number'):
-            retval = self.consume('number')
-        elif self.test('string'):
-            retval = self.consume('string')
-        elif self.test('operator'):
-            retval = self.consume('operator')
-        elif self.test('parens_open'):
-            retval = self.consume('parens')
-        elif self.test('list_open'):
-            retval = self.consume('list')
-        elif self.test('dict_open'):
-            retval = self.consume('dict')
-        else:
+        It works basically by scanning the items in line until the precedence is
+        less than the current precedence.  ``left`` holds the current value,
+        and is either 'merged' into the right value via an operation, or it is
+        returned so that scanning can continue at a lower precedence.
+        """
+        if len(line) == index:
+            raise ParseException('Expected value')
+        precedence_order, direction = precedence
+        new_precedence = None
+        left = line[index]
+        index += 1
+        if len(line) == index:
+            return left.to_value(), index
+
+        while index < len(line):
+            if isinstance(left, PlywoodOperatorGrammar):
+                right, index = self.figure_out_precedence(line, index, self.PRECEDENCE['unary'])
+                left = PlywoodUnaryOperator(operator=str(left), value=right)
+            else:
+                if not isinstance(left, PlywoodValue):
+                    left = left.to_value()
+                op = line[index]
+                index += 1
+                if not isinstance(op, PlywoodOperatorGrammar):
+                    raise Exception('Todo function call, low binding')
+                elif isinstance(op, PlywoodParens):
+                    # convert PlywoodParens to PlywoodArguments
+                    # op = PlywoodOperatorGrammar(FnCall, )
+                    raise Exception('Todo function call')
+                elif isinstance(op, PlywoodOperatorGrammar):
+                    new_precedence = self.operator_precedence(op)
+                    new_order, new_direction = new_precedence
+
+                    if new_order < precedence_order or (new_order == precedence_order and direction == self.LTR):
+                        return left, index - 1
+                    elif new_order > precedence_order or (new_order == precedence_order and direction == self.RTL):
+                        right, index = self.figure_out_precedence(line, index, new_precedence)
+                    op = PlywoodOperator(str(op), left, right)
+                    left = op
+                else:
+                    raise Exception('Unknown token "{op!r}"'.format(op=op))
+        return left, index
+
+ # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+
+    TOKEN_TESTS = [
+        'number',
+        'operator',
+        'variable',
+        'string',
+        'parens_open',
+        'list_open',
+        'dict_open',
+    ]
+
+    def consume_token(self):
+        retval = None
+        for token_type in self.TOKEN_TESTS:
+            if self.test(token_type):
+                retval = self.consume(token_type)
+                break
+        if not retval:
             raise Exception(repr(self.buffer))
         self.consume('whitespace')
 
@@ -259,7 +427,7 @@ class Plywood(object):
         return PlywoodDict(retval)
 
     def consume_variable(self):
-        variable = PlywoodVariable(self.buffer)
+        variable = PlywoodVariableGrammar(self.buffer)
         return variable
 
     def consume_whitespace(self):
