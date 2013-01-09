@@ -9,10 +9,8 @@ from chomsky import (
     )
 
 
-COUNTER = [10]
-def counter():
-    COUNTER[0] -= 1
-    return bool(COUNTER)
+class UnindentException(Exception):
+    pass
 
 
 class PlywoodNumberGrammar(chomsky.Number):
@@ -32,7 +30,11 @@ class PlywoodNumberGrammar(chomsky.Number):
 
 class PlywoodStringGrammar(chomsky.String):
     def to_value(self):
-        return PlywoodString(str(self))
+        parsed = self.parsed
+        if isinstance(parsed, chomsky.TripleSingleQuotedString) or\
+           isinstance(parsed, chomsky.TripleDoubleQuotedString):
+            return PlywoodString(str(parsed), triple=True)
+        return PlywoodString(str(parsed))
 
 
 class PlywoodVariableGrammar(chomsky.Variable):
@@ -76,7 +78,27 @@ class PlywoodVariable(PlywoodValue):
 
 
 class PlywoodString(PlywoodValue):
-    def __init__(self, value):
+    def __init__(self, value, triple=False):
+        self.triple = triple
+        self.lang = None
+        if triple:
+            # unindent
+            indent = None
+            lines = value.splitlines()
+            self.lang = lines.pop(0)
+            lines.pop()
+
+            for line in lines:
+                if not line:
+                    continue
+                whitespace = str(Whitespace(' \t')(line))
+                if indent is None or len(whitespace) < indent:
+                    indent = whitespace
+                    if not indent:
+                        break
+            if indent:
+                lines = map(lambda line: line[len(indent):], lines)
+                value = "\n".join(lines)
         self.value = value
 
     def __eq__(self, other):
@@ -85,7 +107,11 @@ class PlywoodString(PlywoodValue):
     def __repr__(self):
         return '{type.__name__}({self.value!r})'.format(type=type(self), self=self)
 
-    __str__ = lambda self: repr(self.value)
+    def __str__(self):
+        retval = self.value
+        if self.triple:
+            return '''"""{lang}\n{retval}\n"""'''.format(lang=self.lang, retval=retval)
+        return repr(retval)
 
 
 class PlywoodNumber(PlywoodValue):
@@ -115,7 +141,10 @@ class PlywoodOperator(PlywoodValue):
         return retval
 
     def __str__(self):
-        return '{self.left} {self.operator} {self.right}'.format(type=type(self), self=self)
+        op = str(self.operator)
+        if self.operator not in ['.', '@']:
+            op = ' ' + op + ' '
+        return '{self.left}{op}{self.right}'.format(type=type(self), self=self, op=op)
 
 
 class PlywoodFunction(PlywoodOperator):
@@ -135,9 +164,11 @@ class PlywoodFunction(PlywoodOperator):
         return retval
 
     def __str__(self):
+        indent = ''
+        retval = '{indent}{self.left}{self.right}'.format(type=type(self), self=self, indent=indent)
         if self.block:
-            return '{self.left}{self.right}:{self.block}'.format(type=type(self), self=self)
-        return '{self.left}{self.right}'.format(type=type(self), self=self)
+            retval += ':\n{indent}    {block}'.format(self=self, block=str(self.block).replace("\n", "\n    " + indent), indent=indent)
+        return retval
 
 
 class PlywoodUnaryOperator(PlywoodValue):
@@ -214,7 +245,10 @@ class PlywoodKvp(object):
         return type(self).__name__ + '(' + repr(self.key) + self.separator + repr(self.value) + ')'
 
     def __str__(self):
-        return str(self.key) + self.separator + str(self.value) + ')'
+        if self.separator == '=':
+            return str(self.key)[1:-1] + self.separator + str(self.value)
+        else:
+            return str(self.key) + self.separator + str(self.value)
 
 
 class PlywoodList(PlywoodValue):
@@ -315,7 +349,11 @@ class Plywood(object):
                 self.consume('blankline')
             else:
                 self.whitespace = 'single_whitespace'
-                line = self.consume_until('eol')
+                try:
+                    line = self.consume_until('eol')
+                except UnindentException:
+                    break
+
                 if line:
                     parsed.append(line)
                 self.consume('eol')
@@ -388,7 +426,7 @@ class Plywood(object):
                 if not self.block_indent.test(self.buffer):
                     while self.buffer[0] != '\n' and self.buffer[0] != '\r':
                         self.buffer.advance(-1)
-                    return None
+                    raise UnindentException()
 
                 self.block_indent.consume(self.buffer)
                 if self.test('single_whitespace'):
@@ -443,15 +481,9 @@ class Plywood(object):
                     if precedence_order >= self.operator_precedence('low')[0]:
                         return left, index - 1
 
-                    print("""=============== __init__.py at line {0} ===============
-left: {1!r}
-op: {2!r}
-""".format(__import__('sys')._getframe().f_lineno - 3, left, op, ))
                     if isinstance(left, PlywoodFunction):
-                        print("=============== __init__.py at line {0} ===============".format(__import__('sys')._getframe().f_lineno))
                         left.block = op
                     else:
-                        print("=============== __init__.py at line {0} ===============".format(__import__('sys')._getframe().f_lineno))
                         left = PlywoodFunction(left, PlywoodParens([]), op)
                 elif not isinstance(op, PlywoodOperatorGrammar):
                     # this is the 'auto call' section - when two non-operators

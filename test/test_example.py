@@ -74,7 +74,7 @@ html:
 
   body:
     div.container:
-      div.page-header
+      div@page_header
       div.row:
         div.span6:
           block 'yield'
@@ -82,7 +82,8 @@ html:
     div.container:
       footer:
         p "&copy; Simple Energy {date('%Y')}"
-    script(type='text/javascript'): '''javascript
+    script(type='text/javascript'):
+      '''javascript
       $(document).ready(function(){
 
         $(".rounded-img").load(function() {
@@ -98,10 +99,7 @@ html:
 
 
 def test_example():
-    lines = example.splitlines()
-    input = ''
-    for line in lines:
-        input += line + "\n"
-        test = Plywood(input).parse()
-        print repr({input: str(test)})
-    assert False
+    test = Plywood(example).parse()
+    print
+    print str(test)
+    print

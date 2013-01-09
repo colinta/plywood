@@ -554,3 +554,12 @@ foo:
         BAH:  bar
         foo:  bar
 ''').parse()
+
+
+def test_multi_block_in_out():
+    test = Plywood('''
+foo:
+    foo
+BAH:
+    BAH
+''').parse()
