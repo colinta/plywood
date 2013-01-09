@@ -1,8 +1,11 @@
+from pytest import raises
 from plywood import (
-    Plywood, PlywoodVariable, PlywoodString, PlywoodNumber,
+    Plywood, PlywoodValue,
+    PlywoodVariable, PlywoodString, PlywoodNumber,
     PlywoodOperator, PlywoodUnaryOperator,
     PlywoodParens, PlywoodList, PlywoodDict,
-    PlywoodKvp,
+    PlywoodKvp, PlywoodFunction, PlywoodBlock,
+    ParseException,
     )
 
 
@@ -34,7 +37,29 @@ def assert_operator(test, op):
 
 def assert_kvp(test, key):
     assert isinstance(test, PlywoodKvp)
-    assert test.key == key
+    if key:
+        if not isinstance(key, PlywoodValue):
+            assert_string(test.key, key)
+        else:
+            assert test.key == key
+
+
+def assert_block(test, count=None):
+    assert isinstance(test, PlywoodBlock)
+    if count is not None:
+        assert len(test.lines) == count
+
+
+def assert_parens(test, count=None):
+    assert isinstance(test, PlywoodParens)
+    if count is not None:
+        assert len(test.values) == count
+
+
+def assert_dict(test, count=None):
+    assert isinstance(test, PlywoodDict)
+    if count is not None:
+        assert len(test.values) == count
 
 
 def test_variable():
@@ -224,7 +249,7 @@ def test_precedence():
 
 def test_parens():
     test = Plywood('(-foo + ~bar)').parse()[0]
-    assert isinstance(test, PlywoodParens)
+    assert_parens(test, 1)
 
     assert_operator(test.values[0], '+')
     assert_unary(test.values[0].left, '-')
@@ -235,7 +260,7 @@ def test_parens():
 
 def test_parens_two():
     test = Plywood('(a, b)').parse()[0]
-    assert isinstance(test, PlywoodParens)
+    assert_parens(test, 2)
 
     assert_variable(test.values[0], 'a')
     assert_variable(test.values[1], 'b')
@@ -243,13 +268,13 @@ def test_parens_two():
 
 def test_args_two():
     test = Plywood('foo a, b').parse()[0]
-    assert_operator(test, '()')
+    assert isinstance(test, PlywoodFunction)
     assert_variable(test.left, 'foo')
 
 
 def test_args_three():
     test = Plywood('foo a, b, c').parse()[0]
-    assert_operator(test, '()')
+    assert isinstance(test, PlywoodFunction)
 
     assert_variable(test.right.values[0], 'a')
     assert_variable(test.right.values[1], 'b')
@@ -258,7 +283,7 @@ def test_args_three():
 
 def test_args_three_kwarg():
     test = Plywood('foo a, b, d=e, c, f=g').parse()[0]
-    assert_operator(test, '()')
+    assert isinstance(test, PlywoodFunction)
 
     assert_variable(test.right.values[0], 'a')
     assert_variable(test.right.values[1], 'b')
@@ -271,7 +296,7 @@ def test_parens_multiline():
     b,
     c,
 )''').parse()[0]
-    assert isinstance(test, PlywoodParens)
+    assert_parens(test, 3)
 
     assert_variable(test.values[0], 'a')
     assert_variable(test.values[1], 'b')
@@ -284,7 +309,7 @@ def test_parens_args():
     b,
     c=d,
 )''').parse()[0]
-    assert isinstance(test, PlywoodParens)
+    assert_parens(test, 3)
 
     assert_variable(test.values[0], 'a')
     assert_variable(test.values[1], 'b')
@@ -320,32 +345,212 @@ def test_assign():
 
 def test_function():
     test = Plywood('foo(bar, baz)').parse()[0]
-    assert_operator(test, '()')
+    assert isinstance(test, PlywoodFunction)
     assert isinstance(test.right, PlywoodParens)
 
     assert_variable(test.right.values[0], 'bar')
     assert_variable(test.right.values[1], 'baz')
 
 
+def test_function_kwargs():
+    test = Plywood('foo(bar, 1, key="value")').parse()[0]
+    assert isinstance(test, PlywoodFunction)
+    assert_variable(test.left, 'foo')
+    assert_parens(test.right, 3)
+    assert_variable(test.right.values[0], 'bar')
+    assert_number(test.right.values[1], 1)
+    assert_kvp(test.right.values[2], 'key')
+    assert_string(test.right.values[2].value, 'value')
+
+
 def test_autofunction():
     test = Plywood('foo bar, baz(a b), c=d').parse()[0]
-    assert_operator(test, '()')
+    assert isinstance(test, PlywoodFunction)
 
     assert_variable(test.right.values[0], 'bar')
     assert_operator(test.right.values[1], '()')
     assert_kvp(test.right.values[2], 'c')
     assert_variable(test.right.values[2].value, 'd')
 
-# test =
-# test = Plywood('foo(bar, 1, key="value")').parse()[0]
-# test = Plywood('{foo: bar}').parse()[0]
-# test = Plywood('{"foo": "bar"}').parse()[0]
-# test = Plywood("foo\nbar").parse()[0]
-# test = Plywood("""
-# foo
-# "foo"
-# 1
-# 123
-# bar
-# foo(bar, item='value')
-# """).parse()[0]
+
+def test_dict():
+    test = Plywood('{"foo": bar}').parse()[0]
+    assert_dict(test, 1)
+    assert_kvp(test.values[0], 'foo')
+    assert_variable(test.values[0].value, 'bar')
+
+
+def test_dict_two():
+    test = Plywood('{"foo": bar, bar: baz}').parse()[0]
+    assert_dict(test, 2)
+    assert_kvp(test.values[0], 'foo')
+    assert_variable(test.values[0].value, 'bar')
+    assert_kvp(test.values[1], PlywoodVariable('bar'))
+    assert_variable(test.values[1].value, 'baz')
+
+
+def test_dict_multiline():
+    test = Plywood('''{
+        "foo": bar,
+        "bar": baz
+        }''').parse()[0]
+    assert_dict(test, 2)
+    assert_kvp(test.values[0], 'foo')
+    assert_variable(test.values[0].value, 'bar')
+    assert_kvp(test.values[1], PlywoodVariable('bar'))
+    assert_variable(test.values[1].value, 'baz')
+
+
+def test_multiline_commands():
+    test = Plywood("foo\nbar").parse()
+    assert_variable(test[0], 'foo')
+    assert_variable(test[1], 'bar')
+
+
+def test_lots_of_multiline_commands():
+    test = Plywood("""
+foo
+"foo"
+1
+123
+bar
+foo(bar, item='value')
+""").parse()
+    assert_variable(test[0], 'foo')
+    assert_string(test[1], 'foo')
+    assert_number(test[2], 1)
+    assert_number(test[3], 123)
+    assert_variable(test[4], 'bar')
+    assert_operator(test[5], '()')
+
+
+def test_block_indent_fail():
+    with raises(ParseException):
+        test = Plywood('   foo').parse()
+        assert test == None
+
+
+def test_block():
+    test = Plywood('''
+if True or False:
+    print "True!"
+''').parse()
+
+    assert_block(test, 1)
+    assert isinstance(test[0], PlywoodFunction)
+    assert_variable(test[0].left, 'if')
+    assert_block(test[0].block, 1)
+    assert isinstance(test[0].block.lines[0], PlywoodFunction)
+    assert_variable(test[0].block.lines[0].left, 'print')
+    assert_parens(test[0].block.lines[0].right, 1)
+    assert_string(test[0].block.lines[0].right[0], 'True!')
+    assert_parens(test[0].right, 1)
+    assert_operator(test[0].right[0], 'or')
+    assert_variable(test[0].right[0].left, 'True')
+    assert_variable(test[0].right[0].right, 'False')
+
+
+def test_inline_block():
+    """
+    same as test_block, but inline block.
+    """
+    test = Plywood('''
+if True or False:  print "True!"
+''').parse()
+
+    assert_block(test, 1)
+    assert isinstance(test[0], PlywoodFunction)
+    assert_variable(test[0].left, 'if')
+    assert_block(test[0].block, 1)
+    assert isinstance(test[0].block.lines[0], PlywoodFunction)
+    assert_variable(test[0].block.lines[0].left, 'print')
+    assert_parens(test[0].block.lines[0].right, 1)
+    assert_string(test[0].block.lines[0].right[0], 'True!')
+    assert_parens(test[0].right, 1)
+    assert_operator(test[0].right[0], 'or')
+    assert_variable(test[0].right[0].left, 'True')
+    assert_variable(test[0].right[0].right, 'False')
+
+
+def test_happy_fun_block():
+    test = Plywood('''
+div: p: 'text'
+''').parse()
+
+    assert_block(test, 1)
+    assert isinstance(test[0], PlywoodFunction)
+    assert_variable(test[0].left, 'div')
+    assert_block(test[0].block, 1)
+    assert isinstance(test[0].block[0], PlywoodFunction)
+    assert_variable(test[0].block[0].left, 'p')
+    assert_block(test[0].block[0].block, 1)
+    assert_string(test[0].block[0].block[0], 'text')
+
+
+def test_classy_div():
+    test = Plywood('''
+div.classy: 'text'
+''').parse()
+
+    assert_block(test, 1)
+    assert isinstance(test[0], PlywoodFunction)
+    assert_operator(test[0].left, '.')
+    assert_variable(test[0].left.left, 'div')
+    assert_variable(test[0].left.right, 'classy')
+    assert_block(test[0].block, 1)
+    assert_string(test[0].block[0], 'text')
+
+
+def test_id_div():
+    test = Plywood('''
+div@any_id: 'text'
+''').parse()
+
+    assert_block(test, 1)
+    assert isinstance(test[0], PlywoodFunction)
+    assert_operator(test[0].left, '@')
+    assert_variable(test[0].left.left, 'div')
+    assert_variable(test[0].left.right, 'any_id')
+    assert_block(test[0].block, 1)
+    assert_string(test[0].block[0], 'text')
+
+
+def test_classy_id_div():
+    test = Plywood('''
+div.classy@any_id: 'text'
+''').parse()
+
+    assert_block(test, 1)
+    assert isinstance(test[0], PlywoodFunction)
+    assert_operator(test[0].left, '@')
+    assert_operator(test[0].left.left, '.')
+    assert_variable(test[0].left.left.left, 'div')
+    assert_variable(test[0].left.left.right, 'classy')
+    assert_variable(test[0].left.right, 'any_id')
+    assert_block(test[0].block, 1)
+    assert_string(test[0].block[0], 'text')
+
+
+def test_multi_inline():
+    test = Plywood('''
+foo: bar
+foo: bar
+''').parse()
+
+
+def test_multi_block():
+    test = Plywood('''
+foo:
+    foo:
+        foo:
+            foo:
+''').parse()
+
+
+def test_multi_mixed():
+    test = Plywood('''
+foo:
+    foo:
+        BAH:  bar
+        foo:  bar
+''').parse()

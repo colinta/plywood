@@ -1,12 +1,18 @@
 import string
 import chomsky
 from chomsky import (
-    Literal, Char, Chars, StringEnd, LineEnd,
+    Literal, Char, Chars, StringEnd, LineEnd, Whitespace,
     Optional, ZeroOrMore,
     VariableGrammarType, OperatorGrammarType,
     Buffer,
     ParseException,
     )
+
+
+COUNTER = [10]
+def counter():
+    COUNTER[0] -= 1
+    return bool(COUNTER)
 
 
 class PlywoodNumberGrammar(chomsky.Number):
@@ -44,7 +50,8 @@ class PlywoodOperatorGrammar(chomsky.Grammar):
         '==', '!=', '<=', '>=', '<', '>',
         'not', 'and', 'or', '&', '|', '~', '<<', '>>',
         '**',  '//',  '+',  '-',  '/',  '*',  '%',
-        '.',  # function call
+        '.',  # getitem
+        '@',  # id/name
         ',',  # auto arg
         '**=', '//=', '+=', '-=', '/=', '*=', '%=', '=',
     ]
@@ -72,8 +79,13 @@ class PlywoodString(PlywoodValue):
     def __init__(self, value):
         self.value = value
 
+    def __eq__(self, other):
+        return self.value == str(other)
+
     def __repr__(self):
         return '{type.__name__}({self.value!r})'.format(type=type(self), self=self)
+
+    __str__ = lambda self: repr(self.value)
 
 
 class PlywoodNumber(PlywoodValue):
@@ -82,6 +94,9 @@ class PlywoodNumber(PlywoodValue):
 
     def __repr__(self):
         return '{type.__name__}({self.value!r})'.format(type=type(self), self=self)
+
+    def __str__(self):
+        return str(self.value)
 
 
 class PlywoodOperator(PlywoodValue):
@@ -95,14 +110,34 @@ class PlywoodOperator(PlywoodValue):
     def __repr__(self):
         indent = type(self).INDENT
         type(self).INDENT += '  '
-        retval = '{indent}{type.__name__}\n{indent}(\n{indent}  {self.left!r}\n{indent}  {self.operator!r}\n{indent}  {self.right!r}\n{indent})\n'.format(type=type(self), self=self, indent=indent)
+        retval = '{indent}{type.__name__}({self.left!r}\n{indent}  {self.operator!r}\n{indent}  {self.right!r}\n{indent})\n'.format(type=type(self), self=self, indent=indent)
         type(self).INDENT = indent
         return retval
 
     def __str__(self):
-        if self.operator == '()':
-            return '{self.left}{self.right}'.format(type=type(self), self=self)
         return '{self.left} {self.operator} {self.right}'.format(type=type(self), self=self)
+
+
+class PlywoodFunction(PlywoodOperator):
+    def __init__(self, left, right, block=None):
+        super(PlywoodFunction, self).__init__('()', left, right)
+        self.block = block
+
+    def __repr__(self):
+        indent = type(self).INDENT
+        type(self).INDENT += '  '
+        retval = '{indent}{type.__name__}({self.left!r} {self.right!r})'.format(type=type(self), self=self, indent=indent)
+        if self.block:
+            retval += ':\n'
+            type(self).INDENT += '  '
+            retval += repr(self.block)
+        type(self).INDENT = indent
+        return retval
+
+    def __str__(self):
+        if self.block:
+            return '{self.left}{self.right}:{self.block}'.format(type=type(self), self=self)
+        return '{self.left}{self.right}'.format(type=type(self), self=self)
 
 
 class PlywoodUnaryOperator(PlywoodValue):
@@ -114,12 +149,33 @@ class PlywoodUnaryOperator(PlywoodValue):
         return '{type.__name__}({self.operator!r}, {self.value!r})'.format(type=type(self), self=self)
 
 
+class PlywoodBlock(PlywoodValue):
+    def __init__(self, lines):
+        self.lines = lines
+
+    def __getitem__(self, key):
+        return self.lines.__getitem__(key)
+
+    def __eq__(self, other):
+        return self is other or \
+            isinstance(other, list) and other == self.lines
+
+    def __repr__(self):
+        return type(self).__name__ + '(\n' + '\n'.join(repr(v) for v in self.lines) + '\n)'
+
+    def __str__(self):
+        return '\n'.join(str(v) for v in self.lines)
+
+
 class PlywoodParens(PlywoodValue):
     def __init__(self, values, is_set=False):
         def convert_assign(value):
             if isinstance(value, PlywoodOperator) and value.operator == '=':
                 # convert the 'variable' into a string
-                return PlywoodKvp(value.left, value.right, kwarg=True)
+                if not isinstance(value.left, PlywoodVariable):
+                    raise ParseException('Invalid keyword argument')
+                key = PlywoodString(value.left.name)
+                return PlywoodKvp(key, value.right, kwarg=True)
             return value
 
         self.values = map(convert_assign, values)
@@ -143,9 +199,7 @@ class PlywoodParens(PlywoodValue):
 
 class PlywoodKvp(object):
     def __init__(self, key, value, kwarg=False):
-        if not isinstance(key, PlywoodVariable):
-            raise ParseException('Invalid keyword argument')
-        self.key = key.name
+        self.key = key
         self.value = value
         self.kwarg = kwarg
 
@@ -200,22 +254,61 @@ tokens = [
 
 
 class Plywood(object):
-    def __init__(self, input, parent=None):
+    def __init__(self, input):
         if not isinstance(input, Buffer):
             input = Buffer(input)
         self.buffer = input
         self.output = ''
-        self.parent = parent
+        self.block_indent = None
+        self.prev_indent = []
 
         self.scope = {
             'foo': 'bar',
             'bar': 'foo',
         }
 
+    def __repr__(self):
+        return "{type.__name__}({self.buffer!r})".format(type=type(self), self=self)
+
     def run(self):
         return self.parse()
 
     def parse(self):
+        return self.consume_block('')
+
+    def consume_block(self, indent=None):
+        """
+        This is called when a ':' is found at the end of the line::
+            if a: b
+            if a:
+                b
+
+        and at the start of parsing, when the indent should be ''.
+
+        If ``indent`` is None, we are at a ':'.  The colon is consumed, then
+        single_whitespace, and then if we are at the end of the line, a block
+        is consumed.  Otherwise we are at a token, and a single line is
+        consumed.
+        """
+        self.prev_indent.append(self.block_indent)
+        if indent is not None:
+            self.block_indent = Literal(indent)
+        else:
+            self.block_indent = None
+            self.consume('block_open')
+            if self.test('blankspace'):
+                self.consume('blankspace')
+
+            # end of the line?
+            if self.test('eol'):
+                # yup, so continue - consume a multiline block
+                self.consume('eol')
+            else:
+                # no!?  consume just the line, and nevermind about the prev_indent
+                self.block_indent = self.prev_indent.pop()
+                retval = PlywoodBlock([self.consume_until('eol', inline=True)])
+                return retval
+
         parsed = []
         while self.buffer:
             if self.test('blankline'):
@@ -223,9 +316,11 @@ class Plywood(object):
             else:
                 self.whitespace = 'single_whitespace'
                 line = self.consume_until('eol')
-                parsed.append(line)
+                if line:
+                    parsed.append(line)
                 self.consume('eol')
-        return parsed
+        self.block_indent = self.prev_indent.pop()
+        return PlywoodBlock(parsed)
 
  # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
@@ -233,6 +328,8 @@ class Plywood(object):
     RTL = 2
     PRECEDENCE = {
         'high':  (100, LTR),
+        '()':    (15, RTL),
+        ':':     (15, RTL),
         'unary': (14, RTL),
         '.':     (13, LTR),
         '@':     (13, LTR),
@@ -271,11 +368,35 @@ class Plywood(object):
         key = str(op)
         return self.PRECEDENCE[key]
 
-    def consume_until(self, until_token):
-        line = []
+    def consume_until(self, until_token, inline=False):
+        # only eol consumers get the indent treatment
+        if until_token == 'eol' and not inline:
+            # the eol matcher should match the initial indent
+            # if it's none, we need to figure out the indent
+            # if it's too short, the block is done, and is rolled back to the
+            # eol.  if it's too long, raise an exception.
+            if not self.block_indent:
+                whitespace = str(self.consume('optional_whitespace'))
+                prev_indent = self.prev_indent[-1].literal
+                if len(prev_indent) > len(whitespace):
+                    raise ParseException('Expected: more indent')
+                if len(prev_indent) == len(whitespace):
+                    return None
 
+                self.block_indent = Literal(whitespace)
+            else:
+                if not self.block_indent.test(self.buffer):
+                    while self.buffer[0] != '\n' and self.buffer[0] != '\r':
+                        self.buffer.advance(-1)
+                    return None
+
+                self.block_indent.consume(self.buffer)
+                if self.test('single_whitespace'):
+                    raise ParseException('Unexpected: too much indent')
+
+        line = []
         while not self.test(until_token):
-            token = self.consume('token')
+            token = self.consume_token()
             line.append(token)
 
         if line:
@@ -297,7 +418,7 @@ class Plywood(object):
         returned so that scanning can continue at a lower precedence.
         """
         if len(line) == index:
-            raise ParseException('Expected value')
+            raise ParseException('Expected: value')
         precedence_order, direction = precedence
         new_precedence = None
         left = line[index]
@@ -313,9 +434,25 @@ class Plywood(object):
                 left = left.to_value()
                 op = line[index]
                 index += 1
+
                 if isinstance(op, PlywoodParens):
-                    # convert PlywoodParens to PlywoodArguments
-                    left = PlywoodOperator('()', left, op)
+                    left = PlywoodFunction(left, op)
+                elif isinstance(op, PlywoodBlock):
+                    # precedence checking for the block - it can only be bound
+                    # at the lowest precedence
+                    if precedence_order >= self.operator_precedence('low')[0]:
+                        return left, index - 1
+
+                    print("""=============== __init__.py at line {0} ===============
+left: {1!r}
+op: {2!r}
+""".format(__import__('sys')._getframe().f_lineno - 3, left, op, ))
+                    if isinstance(left, PlywoodFunction):
+                        print("=============== __init__.py at line {0} ===============".format(__import__('sys')._getframe().f_lineno))
+                        left.block = op
+                    else:
+                        print("=============== __init__.py at line {0} ===============".format(__import__('sys')._getframe().f_lineno))
+                        left = PlywoodFunction(left, PlywoodParens([]), op)
                 elif not isinstance(op, PlywoodOperatorGrammar):
                     # this is the 'auto call' section - when two non-operators
                     # are next to each other, the right token is passed to the
@@ -324,7 +461,7 @@ class Plywood(object):
                     right, index = self.figure_out_precedence(line, index, self.operator_precedence('low'))
                     # right could be a series of 'token,token' operations.  flatten those out
                     right = self.convert_to_args(right)
-                    left = PlywoodOperator('()', left, right)
+                    left = PlywoodFunction(left, right)
                 elif isinstance(op, PlywoodOperatorGrammar):
                     new_precedence = self.operator_precedence(op)
                     new_order, new_direction = new_precedence
@@ -341,18 +478,11 @@ class Plywood(object):
     def convert_to_args(self, token):
         tokens = []
         while isinstance(token, PlywoodOperator) and token.operator == ',':
-            tokens.append(self.convert_to_kwarg(token.left))
+            tokens.append(token.left)
             token = token.right
-        tokens.append(self.convert_to_kwarg(token))
+        tokens.append(token)
 
         return PlywoodParens(tokens)
-
-    def convert_to_kwarg(self, token):
-        if isinstance(token, PlywoodOperator) and token.operator == '=':
-            key = token.left
-            value = token.right
-            return PlywoodKvp(key, value, kwarg=True)
-        return token
 
  # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
@@ -364,6 +494,7 @@ class Plywood(object):
         ('parens_open', 'parens'),
         ('list_open', 'list'),
         ('dict_open', 'dict'),
+        ('block_open', 'block'),
     )
 
     def consume_token(self):
@@ -372,6 +503,7 @@ class Plywood(object):
             if self.test(token_test):
                 retval = self.consume(token_consume)
                 break
+
         if not retval:
             raise Exception(repr(self.buffer))
         self.consume('whitespace')
@@ -393,43 +525,44 @@ class Plywood(object):
         prev_whitespace = self.whitespace
         self.whitespace = 'multiline_whitespace'
 
-        retval = []
+        tokens = []
         is_set = False
         while not self.test('parens_close'):
             self.consume('whitespace')
             item = self.consume_until('comma_close_parens')
-            retval.append(item)
+            if item:
+                tokens.append(item)
             if self.test(','):
                 is_set = True
                 self.consume(',')
         self.consume('parens_close')
         self.whitespace = prev_whitespace
 
-        return PlywoodParens(retval, is_set=is_set)
+        return PlywoodParens(tokens, is_set=is_set)
 
     def consume_list(self):
         self.consume('list_open')
         prev_whitespace = self.whitespace
         self.whitespace = 'multiline_whitespace'
 
-        retval = []
+        tokens = []
         while not self.test('list_close'):
             self.consume('whitespace')
             item = self.consume_until('comma_close_list')
-            retval.append(item)
+            tokens.append(item)
             if self.test(','):
                 self.consume(',')
         self.consume('list_close')
         self.whitespace = prev_whitespace
 
-        return PlywoodList(retval)
+        return PlywoodList(tokens)
 
     def consume_dict(self):
         self.consume('dict_open')
         prev_whitespace = self.whitespace
         self.whitespace = 'multiline_whitespace'
 
-        retval = []
+        tokens = []
         while not self.test('dict_close'):
             self.consume('whitespace')
             key = self.consume_until('colon_close_key')
@@ -438,13 +571,13 @@ class Plywood(object):
             self.consume('whitespace')
             value = self.consume_until('comma_close_dict')
 
-            retval.append(PlywoodKvp(key, value))
+            tokens.append(PlywoodKvp(key, value))
             if self.test(','):
                 self.consume(',')
         self.consume('dict_close')
         self.whitespace = prev_whitespace
 
-        return PlywoodDict(retval)
+        return PlywoodDict(tokens)
 
  # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
     TESTERS = {
@@ -479,9 +612,11 @@ class Plywood(object):
         'list_close': Literal(']'),
         'dict_open': Literal('{'),
         'dict_close': Literal('}'),
+        'block_open': Literal(':'),
 
         'single_whitespace': Chars(' \t'),
         'multiline_whitespace': Chars(' \t\r\n'),
+        'optional_whitespace': Whitespace(' \t'),
     }
 
     MATCHERS.update({
@@ -489,7 +624,11 @@ class Plywood(object):
     })
 
     MATCHERS.update({
-        'blankline': Optional(Chars(' \t')) + Optional(MATCHERS['comment']) + MATCHERS['eol'],
+        'blankspace': Optional(MATCHERS['single_whitespace']) + Optional(MATCHERS['comment']),
+    })
+
+    MATCHERS.update({
+        'blankline': MATCHERS['blankspace'] + MATCHERS['eol'],
     })
 
     def test(self, token, **kwargs):
