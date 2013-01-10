@@ -374,6 +374,8 @@ class Plywood(object):
                 try:
                     line = self.consume_until('eol')
                 except UnindentException:
+                    while self.buffer[0] != '\n' and self.buffer[0] != '\r':
+                        self.buffer.advance(-1)
                     break
 
                 if line:
@@ -441,18 +443,20 @@ class Plywood(object):
                 if len(prev_indent) > len(whitespace):
                     raise ParseException('Expected: more indent')
                 if len(prev_indent) == len(whitespace):
-                    return None
+                    raise UnindentException()
 
                 self.block_indent = Literal(whitespace)
             else:
                 if not self.block_indent.test(self.buffer):
-                    while self.buffer[0] != '\n' and self.buffer[0] != '\r':
-                        self.buffer.advance(-1)
                     raise UnindentException()
 
-                self.block_indent.consume(self.buffer)
+                indent = self.block_indent.consume(self.buffer)
                 if self.test('single_whitespace'):
-                    raise ParseException('Unexpected: too much indent')
+                    extra = self.consume('single_whitespace')
+                    raise ParseException('Unexpected: too much indent. '
+                        'found {extra!r} ({len_extra}) '
+                        'instead of {indent!r} ({len_indent})'.format(extra=indent + extra, len_extra=len(indent) + len(extra),
+                                                        indent=indent, len_indent=len(indent)))
 
         line = []
         while not self.test(until_token):
