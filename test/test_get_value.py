@@ -10,4 +10,4 @@ from plywood import (
 
 
 def test_numeric():
-    PlywoodNumber(2)
+    assert Plywood('2').run() == '2'
