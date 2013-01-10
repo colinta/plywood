@@ -50,10 +50,11 @@ def assert_block(test, count=None):
         assert len(test.lines) == count
 
 
-def assert_parens(test, count=None):
+def assert_parens(test, arg_count=None, kwarg_count=0):
     assert isinstance(test, PlywoodParens)
-    if count is not None:
-        assert len(test.values) == count
+    if arg_count is not None:
+        assert len(test.args) == arg_count
+        assert len(test.kwargs) == kwarg_count
 
 
 def assert_dict(test, count=None):
@@ -251,19 +252,19 @@ def test_parens():
     test = Plywood('(-foo + ~bar)').parse()[0]
     assert_parens(test, 1)
 
-    assert_operator(test.values[0], '+')
-    assert_unary(test.values[0].left, '-')
-    assert_variable(test.values[0].left.value, 'foo')
-    assert_unary(test.values[0].right, '~')
-    assert_variable(test.values[0].right.value, 'bar')
+    assert_operator(test.args[0], '+')
+    assert_unary(test.args[0].left, '-')
+    assert_variable(test.args[0].left.value, 'foo')
+    assert_unary(test.args[0].right, '~')
+    assert_variable(test.args[0].right.value, 'bar')
 
 
 def test_parens_two():
     test = Plywood('(a, b)').parse()[0]
     assert_parens(test, 2)
 
-    assert_variable(test.values[0], 'a')
-    assert_variable(test.values[1], 'b')
+    assert_variable(test.args[0], 'a')
+    assert_variable(test.args[1], 'b')
 
 
 def test_args_two():
@@ -276,18 +277,23 @@ def test_args_three():
     test = Plywood('foo a, b, c').parse()[0]
     assert isinstance(test, PlywoodFunction)
 
-    assert_variable(test.right.values[0], 'a')
-    assert_variable(test.right.values[1], 'b')
-    assert_variable(test.right.values[2], 'c')
+    assert_variable(test.right.args[0], 'a')
+    assert_variable(test.right.args[1], 'b')
+    assert_variable(test.right.args[2], 'c')
 
 
 def test_args_three_kwarg():
     test = Plywood('foo a, b, d=e, c, f=g').parse()[0]
     assert isinstance(test, PlywoodFunction)
 
-    assert_variable(test.right.values[0], 'a')
-    assert_variable(test.right.values[1], 'b')
-    assert_variable(test.right.values[3], 'c')
+    assert_parens(test.right, 3, 2)
+    assert_variable(test.right.args[0], 'a')
+    assert_variable(test.right.args[1], 'b')
+    assert_variable(test.right.args[2], 'c')
+    assert_kvp(test.right.kwargs[0], 'd')
+    assert_variable(test.right.kwargs[0].value, 'e')
+    assert_kvp(test.right.kwargs[1], 'f')
+    assert_variable(test.right.kwargs[1].value, 'g')
 
 
 def test_parens_multiline():
@@ -298,9 +304,9 @@ def test_parens_multiline():
 )''').parse()[0]
     assert_parens(test, 3)
 
-    assert_variable(test.values[0], 'a')
-    assert_variable(test.values[1], 'b')
-    assert_variable(test.values[2], 'c')
+    assert_variable(test.args[0], 'a')
+    assert_variable(test.args[1], 'b')
+    assert_variable(test.args[2], 'c')
 
 
 def test_parens_args():
@@ -309,12 +315,12 @@ def test_parens_args():
     b,
     c=d,
 )''').parse()[0]
-    assert_parens(test, 3)
+    assert_parens(test, 2, 1)
 
-    assert_variable(test.values[0], 'a')
-    assert_variable(test.values[1], 'b')
-    assert_kvp(test.values[2], 'c')
-    assert_variable(test.values[2].value, 'd')
+    assert_variable(test.args[0], 'a')
+    assert_variable(test.args[1], 'b')
+    assert_kvp(test.kwargs[0], 'c')
+    assert_variable(test.kwargs[0].value, 'd')
 
 
 def test_list():
@@ -326,7 +332,7 @@ def test_list():
     assert_variable(test.values[2], 'three')
     assert_operator(test.values[3], '+')
     assert isinstance(test.values[3].left, PlywoodParens)
-    assert_variable(test.values[3].left.values[0], 'four')
+    assert_variable(test.values[3].left.args[0], 'four')
     assert_unary(test.values[3].right, '-')
     assert_variable(test.values[3].right.value, 'five')
 
@@ -346,31 +352,31 @@ def test_assign():
 def test_function():
     test = Plywood('foo(bar, baz)').parse()[0]
     assert isinstance(test, PlywoodFunction)
-    assert isinstance(test.right, PlywoodParens)
+    assert_parens(test.right, 2)
 
-    assert_variable(test.right.values[0], 'bar')
-    assert_variable(test.right.values[1], 'baz')
+    assert_variable(test.right.args[0], 'bar')
+    assert_variable(test.right.args[1], 'baz')
 
 
 def test_function_kwargs():
     test = Plywood('foo(bar, 1, key="value")').parse()[0]
     assert isinstance(test, PlywoodFunction)
     assert_variable(test.left, 'foo')
-    assert_parens(test.right, 3)
-    assert_variable(test.right.values[0], 'bar')
-    assert_number(test.right.values[1], 1)
-    assert_kvp(test.right.values[2], 'key')
-    assert_string(test.right.values[2].value, 'value')
+    assert_parens(test.right, 2, 1)
+    assert_variable(test.right.args[0], 'bar')
+    assert_number(test.right.args[1], 1)
+    assert_kvp(test.right.kwargs[0], 'key')
+    assert_string(test.right.kwargs[0].value, 'value')
 
 
 def test_autofunction():
     test = Plywood('foo bar, baz(a b), c=d').parse()[0]
     assert isinstance(test, PlywoodFunction)
 
-    assert_variable(test.right.values[0], 'bar')
-    assert_operator(test.right.values[1], '()')
-    assert_kvp(test.right.values[2], 'c')
-    assert_variable(test.right.values[2].value, 'd')
+    assert_variable(test.right.args[0], 'bar')
+    assert_operator(test.right.args[1], '()')
+    assert_kvp(test.right.kwargs[0], 'c')
+    assert_variable(test.right.kwargs[0].value, 'd')
 
 
 def test_dict():

@@ -209,23 +209,30 @@ class PlywoodParens(PlywoodValue):
                 return PlywoodKvp(key, value.right, kwarg=True)
             return value
 
-        self.values = map(convert_assign, values)
+        values = map(convert_assign, values)
+        is_kvp = lambda value: isinstance(value, PlywoodKvp)
+        not_is_kvp = lambda value: not isinstance(value, PlywoodKvp)
+        self.args = filter(not_is_kvp, values)
+        self.kwargs = filter(is_kvp, values)
         self.is_set = is_set
 
     def __getitem__(self, key):
-        return self.values.__getitem__(key)
+        return self.args.__getitem__(key)
 
     def __repr__(self):
         extra = ''
-        if self.is_set and len(self.values) == 1:
+        if self.is_set and len(self.args) == 1:
             extra = ','
-        return type(self).__name__ + '(' + ', '.join(repr(v) for v in self.values) + extra + ')'
+        return type(self).__name__ + '(' + ', '.join(repr(v) for v in self.args) + extra + ')'
 
     def __str__(self):
         extra = ''
-        if self.is_set and len(self.values) == 1:
+        if self.is_set and len(self.args) == 1:
             extra = ','
-        return '(' + ', '.join(str(v) for v in self.values) + extra + ')'
+        between = ''
+        if self.args and self.kwargs:
+            between = ', '
+        return '(' + ', '.join(str(v) for v in self.args) + between + ', '.join(str(v) for v in self.kwargs) + extra + ')'
 
 
 class PlywoodKvp(object):

@@ -53,7 +53,7 @@ def assert_block(test, count=None):
 def assert_parens(test, count=None):
     assert isinstance(test, PlywoodParens)
     if count is not None:
-        assert len(test.values) == count
+        assert len(test.args) == count
 
 
 def assert_dict(test, count=None):
