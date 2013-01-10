@@ -68,6 +68,9 @@ class PlywoodVariable(PlywoodValue):
     def __init__(self, name):
         self.name = name
 
+    def to_python(self, scope):
+        return scope[self.name]
+
     def __eq__(self, other):
         return isinstance(other, PlywoodVariable) and other.name == self.name
 
@@ -101,6 +104,9 @@ class PlywoodString(PlywoodValue):
                 value = "\n".join(lines)
         self.value = value
 
+    def to_python(self, scope):
+        return self.value
+
     def __eq__(self, other):
         return self.value == str(other)
 
@@ -118,6 +124,9 @@ class PlywoodNumber(PlywoodValue):
     def __init__(self, value):
         self.value = value
 
+    def to_python(self, scope):
+        return self.value
+
     def __repr__(self):
         return '{type.__name__}({self.value!r})'.format(type=type(self), self=self)
 
@@ -132,6 +141,9 @@ class PlywoodOperator(PlywoodValue):
         self.operator = operator
         self.left = left
         self.right = right
+
+    def to_python(self):
+        return self.left.to_python() + self.right.to_python()
 
     def __repr__(self):
         indent = type(self).INDENT
@@ -151,6 +163,9 @@ class PlywoodFunction(PlywoodOperator):
     def __init__(self, left, right, block=None):
         super(PlywoodFunction, self).__init__('()', left, right)
         self.block = block
+
+    def to_python(self):
+        return self.scope[self.left.to_python()](*self.right.values)
 
     def __repr__(self):
         indent = type(self).INDENT
