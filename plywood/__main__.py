@@ -1,5 +1,6 @@
-import plywood
+import sys
+from plywood import plywood
 
 
 def run():
-    return plywood.Plywood("here").parse()
+    sys.stdout.write(plywood(sys.stdin.read()))

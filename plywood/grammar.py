@@ -34,7 +34,7 @@ class PlywoodStringGrammar(chomsky.String):
 class PlywoodVariableGrammar(chomsky.Variable):
     __metaclass__ = chomsky.VariableGrammarType
     starts_with = chomsky.Char(string.ascii_letters + '_')
-    ends_with = chomsky.Chars(string.ascii_letters + '_' + string.digits, min=0)
+    ends_with = chomsky.Chars(string.ascii_letters + '_:-' + string.digits, min=0) + chomsky.PrevIsNot(chomsky.L('-') | chomsky.L(':'))
 
     def to_value(self):
         return PlywoodVariable(str(self))
@@ -44,10 +44,10 @@ class PlywoodOperatorGrammar(chomsky.Grammar):
     __metaclass__ = chomsky.OperatorGrammarType
     operators = [
         '==', '!=', '<=', '>=', '<', '>',
+        '**=', '//=', '+=', '-=', '/=', '*=', '%=', '.=', '=',
         'not', 'and', 'or', '&', '|', '~', '<<', '>>',
         '**',  '//',  '+',  '-',  '/',  '*',  '%',
         '.',  # getitem
         '@',  # id/name
         ',',  # auto arg
-        '**=', '//=', '+=', '-=', '/=', '*=', '%=', '=',
     ]

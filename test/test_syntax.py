@@ -1,11 +1,11 @@
 from pytest import raises
+from chomsky import ParseException
 from plywood import (
     Plywood, PlywoodValue,
     PlywoodVariable, PlywoodString, PlywoodNumber,
     PlywoodOperator, PlywoodUnaryOperator,
     PlywoodParens, PlywoodList, PlywoodDict,
     PlywoodKvp, PlywoodFunction, PlywoodBlock,
-    ParseException,
     )
 
 
@@ -72,6 +72,16 @@ def assert_dict(test, count=None):
 def test_variable():
     test = Plywood('foo').parse()[0]
     assert_variable(test, 'foo')
+
+
+def test_variable_dashes():
+    test = Plywood('foo-bar').parse()[0]
+    assert_variable(test, 'foo-bar')
+
+
+def test_variable_colons():
+    test = Plywood('foo:bar').parse()[0]
+    assert_variable(test, 'foo:bar')
 
 
 def test_blank():
