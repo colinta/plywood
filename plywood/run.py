@@ -31,7 +31,7 @@ import plugins  # registers built-in plugins
 
 
 def plywood(input, scope={}):
-    return Plywood(input).run(scope)
+    return Plywood(input).run(scope).strip()
 
 
 class Plywood(object):

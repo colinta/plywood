@@ -58,6 +58,12 @@ class PlywoodValue(object):
         scope.update(cls.GLOBAL)
         return scope
 
+    def get(self, scope):
+        return self.get_value(scope)
+
+    def get_item(self, scope, right):
+        raise Exception("{self!r} has no property {right!r}".format(self=self, right=right))
+
     def to_value(self):
         return self
 
@@ -99,9 +105,11 @@ class PlywoodBlock(PlywoodValue):
         for cmd in self.lines:
             state, cmd_ret = cmd.run(state, scope)
             if state != Continue():
-                pass
+                raise Exception('hell')
             else:
                 retval += str(cmd_ret)
+                if not self.inline:
+                    retval += "\n"
         return state, retval
 
 
@@ -117,6 +125,9 @@ class PlywoodVariable(PlywoodValue):
 
     def get(self, scope):
         return scope[self.name]
+
+    def get_item(self, scope, right):
+        return scope[self.name].get_item(scope, right)
 
     def __eq__(self, other):
         return isinstance(other, PlywoodVariable) and other.name == self.name
@@ -211,6 +222,9 @@ class PlywoodOperator(PlywoodValue):
     def get_value(self, scope):
         return self.handle(self.operator, self.left, self.right, scope)
 
+    def get_item(self, scope, right):
+        return self.get_value(scope).get_item(scope, right)
+
     def __repr__(self):
         indent = type(self).INDENT
         type(self).INDENT += '  '
@@ -231,6 +245,9 @@ class PlywoodFunction(PlywoodOperator):
         if not block:
             block = PlywoodBlock([])
         self.block = block
+
+    def get(self, scope):
+        return self.left.get(scope)
 
     def get_value(self, scope):
         return self.left.get(scope).call(scope, self.right, self.block)
@@ -395,15 +412,18 @@ class PlywoodCallable(PlywoodValue):
 class PlywoodPlugin(PlywoodCallable):
     def __init__(self, fn):
         self.fn = fn
-        self.name = None
+        self.id = None
         self.classes = []
 
-    def get_item(self, name):
-        self.classes.append(name.get_name())
+    def call(self, scope, arguments, block):
+        return self.fn(scope, arguments, block, self.classes, self.id)
+
+    def get_item(self, scope, right):
+        self.classes.append(right.get_name())
         return self
 
-    def set_name(self, name):
-        self.name = name.get_name()
+    def set_id(self, var):
+        self.id = var.get_name()
         return self
 
     def __str__(self):
