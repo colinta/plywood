@@ -1,5 +1,5 @@
 from __future__ import division
-from plywood import PlywoodOperator, PlywoodUnaryOperator
+from plywood import PlywoodOperator, PlywoodUnaryOperator, PlywoodVariable
 
 
 @PlywoodOperator.register('+')
@@ -104,7 +104,17 @@ def get_item(left, right, scope):
 
 @PlywoodUnaryOperator.register('.')
 def unary_get_item(value, scope):
-    return PlywoodOperator.handle('.', scope['self'], value)
+    return PlywoodOperator.handle('.', PlywoodVariable('div'), value)
+
+
+@PlywoodOperator.register('@')
+def set_id(left, right, scope):
+    return left.set_id(right)
+
+
+@PlywoodUnaryOperator.register('@')
+def unary_set_id(value, scope):
+    return PlywoodOperator.handle('@', PlywoodVariable('div'), value)
 
 
 @PlywoodUnaryOperator.register('-')
@@ -120,11 +130,6 @@ def invert(value, scope):
 @PlywoodUnaryOperator.register('not')
 def not_(value, scope):
     return not value.get_value(scope)
-
-
-@PlywoodOperator.register('@')
-def set_id(left, right, scope):
-    return left.set_id(right)
 
 
 @PlywoodOperator.register('=')
