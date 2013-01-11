@@ -62,11 +62,10 @@ def register_html_plugin(tag_name, is_block=False, self_closing=False):
         if id:
             mapped_kwargs['id'] = id
 
-        eol = ''
         inside = block.get_value(scope)
-        if is_block and inside:
-            inside = scope['__indent'](inside)
-            inside = "\n" + inside.rstrip() + "\n"
+        # if is_block and inside:
+        #     inside = scope['__indent'](inside)
+        #     inside = "\n" + inside.rstrip() + "\n"
 
         attrs = ''
         for key, value in mapped_kwargs.iteritems():
@@ -83,12 +82,10 @@ def register_html_plugin(tag_name, is_block=False, self_closing=False):
             tag_open = '<' + tag_name + attrs + '>'
             tag_close = '</' + tag_name + '>'
             if args:
-                inside = tag_open + (tag_close + (is_block and "\n" or '') + tag_open).join(arg.get_value(scope) for arg in args) + tag_close
+                inside = ''.join(arg.get_value(scope) for arg in args)
                 if len(args) > 1:
                     inside = scope['__indent'](inside)
-                return inside
-            else:
-                return tag_open + inside + tag_close + eol
+            return tag_open + inside + tag_close
 
 
 def register_self_closing_plugin(tag_name):
