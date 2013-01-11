@@ -9,7 +9,7 @@ html:
 
   body:
     div.container:
-      div@page_header
+      div@page-header
       .row:
         .span6:
           block 'yield'
