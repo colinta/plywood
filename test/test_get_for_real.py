@@ -11,7 +11,7 @@ def test_html_parens_plugin():
 
 
 def test_html_with_content():
-    assert plywood('html: "content"') == '<html>content</html>'
+    assert plywood('html: "content"') == '<html>\n    content\n</html>'
 
 
 def test_html_kwargs_plugin():
@@ -37,9 +37,7 @@ html:
         "A title!"
 '''
     output = '''<html>
-    <title>
-        A title!
-    </title>
+    <title>A title!</title>
 </html>'''
     assert plywood(input) == output
 
@@ -54,7 +52,9 @@ html:
     output = '''<html>
     <title>A title!</title>
     <body>
-        <p>some text</p>
+        <p>
+            some text
+        </p>
     </body>
 </html>'''
     assert plywood(input) == output
@@ -78,15 +78,15 @@ p.important: span.warning.gray: em: 'text'
 
 def test_id_shorthand():
     input = '''
-p@important: 'text'
+p@label: 'text'
 '''
-    output = '<p id="important">text</p>'
+    output = '<p id="label">text</p>'
     assert plywood(input) == output
 
 
 def test_class_id_shorthand():
     input = '''
-p.important: span#warning.gray.span12: em: 'text'
+p.section: span#warning.gray.span12: em: 'text'
 '''
-    output = '<p class="important"><span class="gray span12" id="warning"><em>text</em></span></p>'
+    output = '<p class="section"><span class="gray span12" id="warning"><em>text</em></span></p>'
     assert plywood(input) == output

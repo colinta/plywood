@@ -5,6 +5,8 @@ from functools import wraps
 
 class PlywoodValue(object):
     GLOBAL = {}
+    FUNCTIONS = {}
+    PLUGINS = {}
 
     @classmethod
     def register(cls, name, value):
@@ -16,8 +18,7 @@ class PlywoodValue(object):
             plugin_name = name
             if plugin_name is None:
                 plugin_name = fn.__name__
-            value = PlywoodCallable(fn)
-            cls.GLOBAL[plugin_name] = value
+            cls.FUNCTIONS[plugin_name] = fn
             return fn
         return decorator
 
@@ -27,8 +28,7 @@ class PlywoodValue(object):
             plugin_name = name
             if plugin_name is None:
                 plugin_name = fn.__name__
-            value = PlywoodPlugin(fn)
-            cls.GLOBAL[plugin_name] = value
+            cls.PLUGINS[plugin_name] = fn
             return fn
         return decorator
 
@@ -56,6 +56,12 @@ class PlywoodValue(object):
 
         scope['__indent'] = indent_apply
         scope.update(cls.GLOBAL)
+        for key, fn in cls.FUNCTIONS.iteritems():
+            value = PlywoodCallable(fn)
+            scope[key] = value
+        for key, fn in cls.PLUGINS.iteritems():
+            value = PlywoodPlugin(fn)
+            scope[key] = value
         return scope
 
     def get(self, scope):
@@ -108,8 +114,8 @@ class PlywoodBlock(PlywoodValue):
                 raise Exception('hell')
             else:
                 retval += str(cmd_ret)
-                if not self.inline:
-                    retval += "\n"
+                # if not self.inline:
+                #     retval += "\n"
         return state, retval
 
 
@@ -422,12 +428,17 @@ class PlywoodPlugin(PlywoodCallable):
         return self.fn(scope, arguments, block, self.classes, self.id)
 
     def get_item(self, scope, right):
-        self.classes.append(right.get_name())
-        return self
+        copy = type(self)(self.fn)
+        copy.id = self.id
+        copy.classes.extend(self.classes)
+        copy.classes.append(right.get_name())
+        return copy
 
     def set_id(self, scope, var):
-        self.id = var.get_name()
-        return self
+        copy = type(self)(self.fn)
+        copy.classes = self.classes
+        copy.id = var.get_name()
+        return copy
 
     def __str__(self):
         return '<Callable:{name}>'.format(name=self.fn.__name__)
