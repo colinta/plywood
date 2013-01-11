@@ -114,8 +114,8 @@ class PlywoodBlock(PlywoodValue):
                 raise Exception('hell')
             else:
                 retval += str(cmd_ret)
-                # if not self.inline:
-                #     retval += "\n"
+                if not self.inline:
+                    retval += "\n"
         return state, retval
 
 

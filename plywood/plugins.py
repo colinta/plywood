@@ -44,8 +44,8 @@ def register_html_plugin(tag_name, is_block=False, self_closing=False):
         if len(block.lines) and args:
             raise InvalidArguments("Passing a block *and* positional arguments is confusing.")
 
-        if not is_block and args:
-            raise InvalidArguments("Passing args to an inline argument.")
+        if self_closing and args:
+            raise InvalidArguments("Passing args to a self closing tag is confusing.")
 
         mapped_kwargs = {}
         for item in kwargs:
@@ -92,50 +92,13 @@ def register_self_closing_plugin(tag_name):
     pass
 
 
-BLOCK_TAGS = [
-  'address',   'blockquote',
-  'center',    'dl',
-  'dt',        'dd',
-  'div',       'dir',
-  'head',      'h1',
-  'h2',        'h3',
-  'h4',        'h5',
-  'h6',        'html',
-  'ul',        'ins',
-  'noscript',  'object',
-  'ol',        'optgroup',
-  'p',         'script',
-  'style',     'select',
-  'table',     'tbody',
-  'tfoot',     'thead',
-]
+from tags import BLOCK_TAGS, INLINE_TAGS, SELF_CLOSING
+
 for tag in BLOCK_TAGS:
     register_html_plugin(tag, is_block=True)
 
-
-INLINE_TAGS = [
-  'a',        'abbr',   'acronym', 'area',
-  'b',        'base',   'bdo',     'big',
-  'body',     'br',     'button',  'caption',
-  'cite',     'code',   'col',     'colgroup',
-  'del',      'dfn',    'em',      'fieldset',
-  'form',     'i',      'ins',     'kbd',
-  'label',    'legend', 'li',      'link',
-  'map',      'option', 'param',   'pre',
-  'q',        'samp',   'small',   'span',
-  'strong',   'sub',    'sup',     'td',
-  'textarea', 'th',     'title',   'tr',
-  'tt',       'var',
-]
 for tag in INLINE_TAGS:
     register_html_plugin(tag, is_block=False)
 
-
-SELF_CLOSING = [
-    'hr',
-    'img',
-    'input',
-    'meta',
-]
 for tag in SELF_CLOSING:
     register_html_plugin(tag, self_closing=True)

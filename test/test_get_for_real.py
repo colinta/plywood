@@ -47,7 +47,7 @@ html:
     body:
         p: "some text"
 '''
-    output = '''<html><title>A title!</title><body><p>some text</p></body></html>'''
+    output = '''<html>\n<title>A title!</title>\n<body><p>some text</p></body>\n</html>'''
     assert plywood(input) == output
 
 

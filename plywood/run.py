@@ -31,7 +31,7 @@ import plugins  # registers built-in plugins
 
 
 def plywood(input, scope={}):
-    return Plywood(input).run(scope).strip()
+    return Plywood(input).run(scope)
 
 
 class Plywood(object):
@@ -104,7 +104,7 @@ class Plywood(object):
                     parsed.append(line)
                 self.consume('eol')
         self.block_indent = self.prev_indent.pop()
-        return PlywoodBlock(parsed)
+        return PlywoodBlock(parsed, inline=(len(parsed) <= 1))
 
  # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
