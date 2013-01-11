@@ -74,3 +74,19 @@ p.important: span.warning.gray: em: 'text'
 '''
     output = '<p class="important"><span class="warning gray"><em>text</em></span></p>'
     assert plywood(input) == output
+
+
+def test_id_shorthand():
+    input = '''
+p@important: 'text'
+'''
+    output = '<p id="important">text</p>'
+    assert plywood(input) == output
+
+
+def test_class_id_shorthand():
+    input = '''
+p.important: span#warning.gray.span12: em: 'text'
+'''
+    output = '<p class="important"><span class="gray span12" id="warning"><em>text</em></span></p>'
+    assert plywood(input) == output

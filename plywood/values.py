@@ -120,6 +120,9 @@ class PlywoodVariable(PlywoodValue):
     def get_name(self):
         return self.name
 
+    def set_id(self, scope, var):
+        return self.get(scope).set_id(scope, var)
+
     def get_value(self, scope):
         return self.get(scope).get_value(scope)
 
@@ -422,7 +425,7 @@ class PlywoodPlugin(PlywoodCallable):
         self.classes.append(right.get_name())
         return self
 
-    def set_id(self, var):
+    def set_id(self, scope, var):
         self.id = var.get_name()
         return self
 

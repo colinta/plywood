@@ -109,7 +109,7 @@ def unary_get_item(value, scope):
 
 @PlywoodOperator.register('@')
 def set_id(left, right, scope):
-    return left.set_id(right)
+    return left.set_id(scope, right)
 
 
 @PlywoodUnaryOperator.register('@')
