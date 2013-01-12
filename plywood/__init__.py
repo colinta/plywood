@@ -5,7 +5,7 @@ from values import (
     PlywoodString,
     PlywoodNumber,
     PlywoodOperator,
-    PlywoodFunction,
+    PlywoodCallOperator,
     PlywoodUnaryOperator,
     PlywoodBlock,
     PlywoodParens,
@@ -14,7 +14,7 @@ from values import (
     PlywoodIndices,
     PlywoodSlice,
     PlywoodDict,
-    PlywoodCallable,
+    PlywoodCallOperatorable,
     PlywoodPlugin,
     )
 from run import plywood, Plywood

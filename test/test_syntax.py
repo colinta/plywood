@@ -5,7 +5,7 @@ from plywood import (
     PlywoodVariable, PlywoodString, PlywoodNumber,
     PlywoodOperator, PlywoodUnaryOperator,
     PlywoodParens, PlywoodList, PlywoodIndices, PlywoodDict,
-    PlywoodKvp, PlywoodFunction, PlywoodBlock,
+    PlywoodKvp, PlywoodCallOperator, PlywoodBlock,
     )
 
 
@@ -36,7 +36,7 @@ def assert_operator(test, op):
 
 
 def assert_function(test, name=None):
-    assert isinstance(test, PlywoodFunction)
+    assert isinstance(test, PlywoodCallOperator)
     if name:
         assert_variable(test.left, name)
 

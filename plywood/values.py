@@ -59,7 +59,7 @@ class PlywoodValue(object):
         scope['__indent'] = indent_apply
         scope.update(cls.GLOBAL)
         for key, fn in cls.FUNCTIONS.iteritems():
-            value = PlywoodCallable(fn)
+            value = PlywoodCallOperatorable(fn)
             scope[key] = value
         for key, fn in cls.PLUGINS.iteritems():
             value = PlywoodPlugin(fn)
@@ -280,16 +280,16 @@ class PlywoodOperator(PlywoodValue):
         return '{self.left}{op}{self.right}'.format(self=self, op=op)
 
 
-class PlywoodFunction(PlywoodOperator):
+class PlywoodCallOperator(PlywoodOperator):
     def __init__(self, left, right, block=None):
-        super(PlywoodFunction, self).__init__('()', left, right)
+        super(PlywoodCallOperator, self).__init__('()', left, right)
         if not block:
             block = PlywoodBlock(-1, [])
         self.block = block
 
     def run(self, state, scope):
         if state == Continue():
-            return Continue(), self.left.get(scope).call(scope, self.right, self.block)
+            return self.left.get(scope).call(scope, self.right, self.block)
         else:
             return None
 
@@ -474,7 +474,7 @@ class PlywoodDict(PlywoodValue):
         return '{' + ', '.join(repr(v) for v in self.values) + '}'
 
 
-class PlywoodCallable(PlywoodValue):
+class PlywoodCallOperatorable(PlywoodValue):
     def __init__(self, fn, block=False):
         self.fn = fn
         self.accepts_block = block
@@ -485,7 +485,7 @@ class PlywoodCallable(PlywoodValue):
         arguments = PlywoodParens(self.location, [])
         block = PlywoodBlock(self.location, [])
         if state == Continue():
-            return Continue(), self.call(scope, arguments, block)
+            return self.call(scope, arguments, block)
         else:
             return None
 
@@ -502,7 +502,7 @@ class PlywoodCallable(PlywoodValue):
             retval = self.fn(block, *args, **kwargs)
         else:
             retval = self.fn(*args, **kwargs)
-        return retval
+        return Continue(), retval
 
     def __str__(self):
         raise Exception('')
@@ -512,14 +512,14 @@ class PlywoodCallable(PlywoodValue):
         return '<{type.__name__}:{name}>'.format(type=type(self), name=self.fn.__name__)
 
 
-class PlywoodPlugin(PlywoodCallable):
+class PlywoodPlugin(PlywoodCallOperatorable):
     def __init__(self, fn):
         self.fn = fn
         self.id = None
         self.classes = []
 
     def call(self, scope, arguments, block):
-        return self.fn(scope, arguments, block, self.classes, self.id)
+        return Continue(), self.fn(scope, arguments, block, self.classes, self.id)
 
     def copy(self):
         copy = type(self)(self.fn)
@@ -538,3 +538,41 @@ class PlywoodPlugin(PlywoodCallable):
         copy = self.copy()
         copy.id = var.get_name()
         return copy
+
+
+class PlywoodCallOperatorable(PlywoodValue):
+    def __init__(self, fn, block=False):
+        self.fn = fn
+        self.accepts_block = block
+
+    def run(self, state, scope):
+        if not hasattr(self, 'location'):
+            raise Exception(repr(self) + ' has no location')
+        arguments = PlywoodParens(self.location, [])
+        block = PlywoodBlock(self.location, [])
+        if state == Continue():
+            return self.call(scope, arguments, block)
+        else:
+            return None
+
+    def get_value(self, scope):
+        return self.run(Continue(), scope)[1]
+
+    def call(self, scope, arguments, block):
+        args = (arg.get_value(scope) for arg in arguments.args)
+        kwargs = dict(
+            (item.key.get_value(scope), item.value.get_value(scope))
+                for item in arguments.kwargs
+                )
+        if self.accepts_block:
+            retval = self.fn(block, *args, **kwargs)
+        else:
+            retval = self.fn(*args, **kwargs)
+        return Continue(), retval
+
+    def __str__(self):
+        raise Exception('')
+        return '<{type.__name__}:{name}>'.format(type=type(self), name=self.fn.__name__)
+
+    def __repr__(self):
+        return '<{type.__name__}:{name}>'.format(type=type(self), name=self.fn.__name__)

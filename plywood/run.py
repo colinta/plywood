@@ -14,7 +14,7 @@ from grammar import (
 from values import (
     PlywoodValue,
     PlywoodOperator,
-    PlywoodFunction,
+    PlywoodCallOperator,
     PlywoodUnaryOperator,
     PlywoodBlock,
     PlywoodParens,
@@ -238,17 +238,17 @@ class Plywood(object):
                 index += 1
 
                 if isinstance(op, PlywoodParens):
-                    left = PlywoodFunction(left, op)
+                    left = PlywoodCallOperator(left, op)
                 elif isinstance(op, PlywoodBlock):
                     # precedence checking for the block - it can only be bound
                     # at the lowest precedence
                     if precedence_order >= self.operator_precedence('low')[0]:
                         return left, index - 1
 
-                    if isinstance(left, PlywoodFunction):
+                    if isinstance(left, PlywoodCallOperator):
                         left.block = op
                     else:
-                        left = PlywoodFunction(left, PlywoodParens(left.location, []), op)
+                        left = PlywoodCallOperator(left, PlywoodParens(left.location, []), op)
                 elif isinstance(op, PlywoodOperatorGrammar):
                     new_precedence = self.operator_precedence(op)
                     new_order, new_direction = new_precedence
@@ -266,7 +266,7 @@ class Plywood(object):
                     right, index = self.figure_out_precedence(line, index, self.operator_precedence('low'))
                     # right could be a series of 'token,token' operations.  flatten those out
                     right = self.convert_to_args(right)
-                    left = PlywoodFunction(left, right)
+                    left = PlywoodCallOperator(left, right)
         return left, index
 
     def convert_to_args(self, token):
