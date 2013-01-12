@@ -104,7 +104,7 @@ class Plywood(object):
                     parsed.append(line)
                 self.consume('eol')
         self.block_indent = self.prev_indent.pop()
-        return PlywoodBlock(parsed, inline=(len(parsed) <= 1))
+        return PlywoodBlock(parsed)
 
  # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 

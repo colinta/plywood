@@ -108,6 +108,8 @@ class PlywoodBlock(PlywoodValue):
     def run(self, scope):
         retval = ''
         state = Continue()
+        old_block = scope.get('__block')
+        scope['__block'] = self
         for cmd in self.lines:
             state, cmd_ret = cmd.run(state, scope)
             if state != Continue():
@@ -116,6 +118,7 @@ class PlywoodBlock(PlywoodValue):
                 retval += str(cmd_ret)
                 if not self.inline:
                     retval += "\n"
+        scope['__block'] = old_block
         return state, retval
 
 

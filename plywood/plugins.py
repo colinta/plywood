@@ -63,9 +63,17 @@ def register_html_plugin(tag_name, is_block=False, self_closing=False):
             mapped_kwargs['id'] = id
 
         inside = block.get_value(scope)
-        # if is_block and inside:
-        #     inside = scope['__indent'](inside)
-        #     inside = "\n" + inside.rstrip() + "\n"
+        print("""=============== plugins.py at line {0} ===============
+tag_name: {5!r}
+is_block: {1!r}
+inside: {2!r}
+inner block: {3!r}
+outer block: {4!r}
+""".format(__import__('sys')._getframe().f_lineno - 6, is_block, inside, block.inline and 'inline' or 'block', scope['__block'].inline and 'inline' or 'block', tag_name))
+        if not block.inline and inside:
+            print("=============== plugins.py at line {0} ===============".format(__import__('sys')._getframe().f_lineno))
+            inside = scope['__indent'](inside)
+            inside = "\n" + inside.rstrip() + "\n"
 
         attrs = ''
         for key, value in mapped_kwargs.iteritems():
