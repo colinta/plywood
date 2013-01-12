@@ -516,6 +516,38 @@ div.classy: 'text'
     assert_string(test[0].block[0], 'text')
 
 
+def test_getitem():
+    test = Plywood('''
+div['something'] = 'text'
+''').parse()
+
+    assert_block(test, 1)
+    assert_operator(test[0], '=')
+    assert_operator(test[0].left, '[]')
+    assert_variable(test[0].left.left, 'div')
+    assert_list(test[0].left.right, 1)
+    assert_string(test[0].left.right[0], 'something')
+    assert_string(test[0].right, 'text')
+
+
+def test_getitem_2():
+    test = Plywood('''
+div['something']['else'] = 'text'
+''').parse()
+
+    assert_block(test, 1)
+    assert_operator(test[0], '=')
+    assert_operator(test[0].left, '[]')
+    assert_operator(test[0].left.left, '[]')
+    assert_variable(test[0].left.left.left, 'div')
+    assert_list(test[0].left.left.right, 1)
+    assert_string(test[0].left.left.right[0], 'something')
+
+    assert_list(test[0].left.right, 1)
+    assert_string(test[0].left.right[0], 'else')
+    assert_string(test[0].right, 'text')
+
+
 def test_id_div():
     test = Plywood('''
 div@any_id: 'text'

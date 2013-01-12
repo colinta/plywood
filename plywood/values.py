@@ -139,7 +139,15 @@ class PlywoodVariable(PlywoodValue):
         return scope[self.name]
 
     def get_item(self, scope, right):
-        return scope[self.name].get_item(scope, right)
+        src = scope[self.name]
+        if not isinstance(src, PlywoodValue):
+            key = right.get_name()
+            if hasattr(src, key):
+                return getattr(src, key)
+            else:
+                return src[key]
+        else:
+            return src.get_item(scope, right)
 
     def __eq__(self, other):
         return isinstance(other, PlywoodVariable) and other.name == self.name

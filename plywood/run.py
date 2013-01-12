@@ -112,7 +112,8 @@ class Plywood(object):
     RTL = 2
     PRECEDENCE = {
         'high':  (100, LTR),
-        '()':    (15, RTL),
+        '[]':    (16, LTR),
+        '()':    (15, LTR),
         ':':     (15, RTL),
         'unary': (14, RTL),
         '.':     (13, LTR),
@@ -223,6 +224,8 @@ class Plywood(object):
 
                 if isinstance(op, PlywoodParens):
                     left = PlywoodFunction(left, op)
+                elif isinstance(op, PlywoodList):
+                    left = PlywoodOperator('[]', left, op)
                 elif isinstance(op, PlywoodBlock):
                     # precedence checking for the block - it can only be bound
                     # at the lowest precedence
