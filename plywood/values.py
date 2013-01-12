@@ -34,8 +34,7 @@ class PlywoodValue(object):
 
     @classmethod
     def new_scope(cls):
-        scope = {
-        }
+        scope = {}
         indent = ['']
 
         def indent_push(new_indent='    '):
