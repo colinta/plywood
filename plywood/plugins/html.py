@@ -1,42 +1,6 @@
-import sys
-from values import PlywoodValue
-from util import entitize
-from exceptions import InvalidArguments
-
-
-@PlywoodValue.register_fn('print')
-def print_(scope, arguments, block):
-    args = arguments.args
-    kwargs = arguments.kwargs
-    sys.stderr.write(repr(args), repr(kwargs))
-    sys.stderr.write("\n")
-    return block.get_value(scope)
-
-
-DOCTYPES = {
-    '5': '<!doctype html>',
-    'default': '<!doctype html>',
-    'xml': '<?xml version="1.0" encoding="utf-8" ?>',
-    'transitional': '<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">',
-    'strict': '<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">',
-    'frameset': '<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Frameset//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-frameset.dtd">',
-    '1.1': '<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">',
-    'basic': '<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML Basic 1.1//EN" "http://www.w3.org/TR/xhtml-basic/xhtml-basic11.dtd">',
-    'mobile': '<!DOCTYPE html PUBLIC "-//WAPFORUM//DTD XHTML Mobile 1.2//EN" "http://www.openmobilealliance.org/tech/DTD/xhtml-mobile12.dtd">',
-    '4': '<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">',
-    'html4': '<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">',
-    'transitional4': '<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">',
-    'frameset4': '<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Frameset//EN" "http://www.w3.org/TR/html4/frameset.dtd">',
-}
-
-
-@PlywoodValue.register_fn()
-def doctype(scope, arguments, block):
-    try:
-        doctype = arguments.args[0].get_value(scope)
-    except IndexError:
-        doctype = '5'
-    return DOCTYPES.get(str(doctype), doctype)
+from plywood.values import PlywoodValue
+from plywood.util import entitize
+from plywood.exceptions import InvalidArguments
 
 
 def register_html_plugin(tag_name, is_block=False, self_closing=False):
