@@ -33,11 +33,13 @@ class PlywoodValue(object):
         return decorator
 
     @classmethod
-    def new_scope(cls):
+    def new_scope(cls, options, self_scope):
         scope = {}
+        add_indent = options.get('indent', '    ')
+        scope['self'] = self_scope  # TODO: PlywoodWrapper
         indent = ['']
 
-        def indent_push(new_indent='    '):
+        def indent_push(new_indent=add_indent):
             indent.append(new_indent)
             return indent
 
@@ -118,6 +120,8 @@ class PlywoodBlock(PlywoodValue):
             if state != Continue():
                 raise Exception('hell')
             else:
+                if isinstance(cmd_ret, PlywoodValue):
+                    cmd_ret = cmd_ret.get_value(scope)
                 retval += str(cmd_ret)
                 if not self.inline:
                     retval += "\n"
@@ -137,15 +141,16 @@ class PlywoodVariable(PlywoodValue):
         return self.get(scope).set_id(scope, var)
 
     def get_value(self, scope):
-        retval = self.get(scope)
-        retval.location = self.location
-        return retval.get_value(scope)
+        return self.get(scope)
 
     def get(self, scope):
-        return scope[self.name]
+        retval = scope[self.name]
+        retval.location = self.location
+        return retval
 
     def get_attr(self, scope, right):
         src = scope[self.name]
+        # src.location = self.location
         if not isinstance(src, PlywoodValue):
             key = right.get_name()
             if hasattr(src, key):
@@ -463,6 +468,8 @@ class PlywoodCallable(PlywoodValue):
         self.fn = fn
 
     def get_value(self, scope):
+        if not hasattr(self, 'location'):
+            raise Exception(repr(self) + ' has no location')
         arguments = PlywoodParens(self.location, [])
         block = PlywoodBlock(self.location, [])
         return self.call(scope, arguments, block)
@@ -471,7 +478,10 @@ class PlywoodCallable(PlywoodValue):
         return self.fn(scope, arguments, block)
 
     def __str__(self):
-        return '<Callable:{name}>'.format(name=self.fn.__name__)
+        return '<{type.__name__}:{name}>'.format(type=type(self), name=self.fn.__name__)
+
+    def __repr__(self):
+        return '<{type.__name__}:{name}>'.format(type=type(self), name=self.fn.__name__)
 
 
 class PlywoodPlugin(PlywoodCallable):
@@ -483,18 +493,20 @@ class PlywoodPlugin(PlywoodCallable):
     def call(self, scope, arguments, block):
         return self.fn(scope, arguments, block, self.classes, self.id)
 
-    def get_attr(self, scope, right):
+    def copy(self):
         copy = type(self)(self.fn)
         copy.id = self.id
         copy.classes.extend(self.classes)
+        if hasattr(self, 'location'):
+            copy.location = self.location
+        return copy
+
+    def get_attr(self, scope, right):
+        copy = self.copy()
         copy.classes.append(right.get_name())
         return copy
 
     def set_id(self, scope, var):
-        copy = type(self)(self.fn)
-        copy.classes = self.classes
+        copy = self.copy()
         copy.id = var.get_name()
         return copy
-
-    def __str__(self):
-        return '<Callable:{name}>'.format(name=self.fn.__name__)

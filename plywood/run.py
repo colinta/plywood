@@ -31,16 +31,17 @@ import operators  # registers built-in operators
 import plugins  # registers built-in plugins
 
 
-def plywood(input, scope={}):
-    return Plywood(input).run(scope)
+def plywood(input, scope={}, **options):
+    return Plywood(input, options).run(scope)
 
 
 class Plywood(object):
-    def __init__(self, input):
+    def __init__(self, input, options={}):
         if not isinstance(input, Buffer):
             input = Buffer(input)
         self.buffer = input
         self.output = ''
+        self.options = options
         self.block_indent = None
         self.prev_indent = []
 
@@ -49,8 +50,7 @@ class Plywood(object):
 
     def run(self, scope={}):
         parsed = self.parse()
-        new_scope = PlywoodValue.new_scope()
-        new_scope['self'] = scope
+        new_scope = PlywoodValue.new_scope(self.options, scope)
         return parsed.get_value(new_scope)
 
     def parse(self):
@@ -107,7 +107,7 @@ class Plywood(object):
                     parsed.append(line)
                 self.consume('eol')
         self.block_indent = self.prev_indent.pop()
-        return PlywoodBlock(location, parsed)
+        return PlywoodBlock(location, parsed, inline=len(parsed) == 0)
 
  # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
@@ -166,7 +166,8 @@ class Plywood(object):
                 whitespace = str(self.consume('optional_whitespace'))
                 prev_indent = self.prev_indent[-1].literal
                 if len(prev_indent) > len(whitespace):
-                    raise ParseException('Expected: more indent')
+                    raise UnindentException()
+                    raise ParseException('Expected: more indent at {self.buffer!r}'.format(self=self))
                 if len(prev_indent) == len(whitespace):
                     raise UnindentException()
 

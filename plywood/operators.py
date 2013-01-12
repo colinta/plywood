@@ -104,7 +104,7 @@ def get_attr(left, right, scope):
 
 @PlywoodUnaryOperator.register('.')
 def unary_get_item(value, scope):
-    return PlywoodOperator.handle('.', PlywoodVariable(value.location, 'div'), value)
+    return PlywoodOperator.handle('.', PlywoodVariable(value.location, 'div'), value, scope)
 
 
 @PlywoodOperator.register('@')
@@ -114,7 +114,7 @@ def set_id(left, right, scope):
 
 @PlywoodUnaryOperator.register('@')
 def unary_set_id(value, scope):
-    return PlywoodOperator.handle('@', PlywoodVariable(value.location, 'div'), value)
+    return PlywoodOperator.handle('@', PlywoodVariable(value.location, 'div'), value, scope)
 
 
 @PlywoodUnaryOperator.register('-')
@@ -136,7 +136,7 @@ def not_(value, scope):
 def assign(left, right, scope):
     left = left.get_value(scope)
     left = right
-    PlywoodOperator.handle('=', left, right)
+    PlywoodOperator.handle('=', left, right, scope)
     return right
 
 
@@ -144,7 +144,7 @@ def assign(left, right, scope):
 def plus_assign(left, right, scope):
     left = left.get_value(scope)
     left += right
-    PlywoodOperator.handle('=', left, right)
+    PlywoodOperator.handle('=', left, right, scope)
     return right
 
 
@@ -152,7 +152,7 @@ def plus_assign(left, right, scope):
 def minus_assign(left, right, scope):
     left = left.get_value(scope)
     left -= right
-    PlywoodOperator.handle('=', left, right)
+    PlywoodOperator.handle('=', left, right, scope)
     return right
 
 
@@ -160,7 +160,7 @@ def minus_assign(left, right, scope):
 def times_assign(left, right, scope):
     left = left.get_value(scope)
     left *= right
-    PlywoodOperator.handle('=', left, right)
+    PlywoodOperator.handle('=', left, right, scope)
     return right
 
 
@@ -168,7 +168,7 @@ def times_assign(left, right, scope):
 def power_assign(left, right, scope):
     left = left.get_value(scope)
     left **= right
-    PlywoodOperator.handle('=', left, right)
+    PlywoodOperator.handle('=', left, right, scope)
     return right
 
 
@@ -176,7 +176,7 @@ def power_assign(left, right, scope):
 def divide_assign(left, right, scope):
     left = left.get_value(scope)
     left /= right
-    PlywoodOperator.handle('=', left, right)
+    PlywoodOperator.handle('=', left, right, scope)
     return right
 
 
@@ -184,7 +184,7 @@ def divide_assign(left, right, scope):
 def int_divide_assign(left, right, scope):
     left = left.get_value(scope)
     left //= right
-    PlywoodOperator.handle('=', left, right)
+    PlywoodOperator.handle('=', left, right, scope)
     return right
 
 
@@ -192,7 +192,7 @@ def int_divide_assign(left, right, scope):
 def modulo_assign(left, right, scope):
     left = left.get_value(scope)
     left %= right
-    PlywoodOperator.handle('=', left, right)
+    PlywoodOperator.handle('=', left, right, scope)
     return right
 
 
@@ -200,5 +200,5 @@ def modulo_assign(left, right, scope):
 def call_assign(left, right, scope):
     left = left.get_value(scope)
     left = scope[left.get_name()].get_attr(right)
-    PlywoodOperator.handle('=', left, right)
+    PlywoodOperator.handle('=', left, right, scope)
     return right

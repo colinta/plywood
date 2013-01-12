@@ -5,18 +5,18 @@ html:
     title: self.title
     script(type='text/javascript', src='https://ajax.googleapis.com/ajax/libs/jquery/1.8.3/jquery.min.js')
     link(rel='stylesheet', href='http://twitter.github.com/bootstrap/1.4.0/bootstrap.min.css')
-    block 'head'
 
   body:
     div.container:
       @page-header
       .row:
-        .span6:
-          block 'yield'
+        .span6
 
     div.container:
       footer:
-        p "&copy; colinta.com {date('%Y')}"
+        p "&copy; colinta.com 2013"
+      
+    
     script(type='text/javascript'):
       '''javascript
       $(document).ready(function(){

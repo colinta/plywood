@@ -119,11 +119,11 @@ SELF_CLOSING = [
     'img',
     'input',
     'input',
-    'keygen'
+    'keygen',
     'link',
     'meta',
     'param',
     'source',
     'track',
-    'wbr'
+    'wbr',
 ]

@@ -9,24 +9,24 @@
     <div class="container">
       <div id="page-header"></div>
       <div class="row">
-        <div class="span6">
-        </div>
+        <div class="span6"></div>
       </div>
-
+    </div>
     <div class="container">
       <footer>
         <p>&copy; colinta.com 2013</p>
       </footer>
+    </div>
     <script type="text/javascript">
       $(document).ready(function(){
-
+      
         $(".rounded-img").load(function() {
           $(this).wrap(function(){
             return '<span class="' + $(this).attr('class') + '" style="background:url(' + $(this).attr('src') + ') no-repeat center center; width: ' + $(this).width() + 'px; height: ' + $(this).height() + 'px;" />';
           });
           $(this).css("opacity", "0");
         });
-
+      
       });
     </script>
   </body>
