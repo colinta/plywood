@@ -63,6 +63,9 @@ class PlywoodValue(object):
             scope[key] = value
         return scope
 
+    def __init__(self, location):
+        self.location = location
+
     def get(self, scope):
         return self.get_value(scope)
 
