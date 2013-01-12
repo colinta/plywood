@@ -56,6 +56,11 @@ def assert_block(test, count=None):
         assert len(test.lines) == count
 
 
+def assert_list(test, value_count=None):
+    assert isinstance(test, PlywoodList)
+    assert len(test.values) == value_count
+
+
 def assert_parens(test, arg_count=None, kwarg_count=0):
     assert isinstance(test, PlywoodParens)
     if arg_count is not None:
@@ -340,7 +345,7 @@ def test_parens_args():
 
 def test_list():
     test = Plywood('[1, "two", three, (four) + -five]').parse()[0]
-    assert isinstance(test, PlywoodList)
+    assert_list(test, 4)
 
     assert_number(test.values[0], 1)
     assert_string(test.values[1], 'two')
