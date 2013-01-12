@@ -31,15 +31,14 @@ import operators  # registers built-in operators
 import plugins  # registers built-in plugins
 
 
-def plywood(input, scope={}, **options):
-    return Plywood(input, options).run(scope)
+def plywood(input, self_scope={}, **options):
+    return Plywood(input, options).run(self_scope)
 
 
 class Plywood(object):
     def __init__(self, input, options={}):
-        if not isinstance(input, Buffer):
-            input = Buffer(input)
-        self.buffer = input
+        self.input = unicode(input)
+        self.buffer = Buffer(self.input)
         self.output = ''
         self.options = options
         self.block_indent = None
@@ -48,9 +47,9 @@ class Plywood(object):
     def __repr__(self):
         return "{type.__name__}({self.buffer!r})".format(type=type(self), self=self)
 
-    def run(self, scope={}):
+    def run(self, self_scope={}):
         parsed = self.parse()
-        new_scope = PlywoodValue.new_scope(self.options, scope)
+        new_scope = PlywoodValue.new_scope(self.options, self.input, self_scope)
         return parsed.get_value(new_scope)
 
     def parse(self):

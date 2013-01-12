@@ -1,8 +1,8 @@
 from plywood import plywood
 
 
-input = open('example.ply').read()
-desired = open('example.html').read()
+input = open('test/example.ply').read()
+desired = open('test/example.html').read()
 
 
 def test_example():

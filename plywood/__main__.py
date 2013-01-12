@@ -3,4 +3,9 @@ from plywood import plywood
 
 
 def run():
-    sys.stdout.write(plywood(sys.stdin.read()))
+    scope = {}
+    for arg in sys.argv[1:]:
+        if '=' in arg:
+            key, value = arg.split('=', 2)
+            scope[key] = value
+    sys.stdout.write(plywood(sys.stdin.read(), scope, indent='  '))

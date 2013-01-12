@@ -1,6 +1,6 @@
 from chomsky import Whitespace, ParseException
-from execution_states import Continue
-from functools import wraps
+from runtime import Continue
+from exceptions import PlywoodKeyError, this_line
 
 
 class PlywoodValue(object):
@@ -33,8 +33,9 @@ class PlywoodValue(object):
         return decorator
 
     @classmethod
-    def new_scope(cls, options, self_scope):
+    def new_scope(cls, options, input, self_scope):
         scope = {}
+        scope['__input'] = input
         add_indent = options.get('indent', '    ')
         scope['self'] = self_scope  # TODO: PlywoodWrapper
         indent = ['']
@@ -113,19 +114,19 @@ class PlywoodBlock(PlywoodValue):
     def run(self, scope):
         retval = ''
         state = Continue()
-        old_block = scope.get('__block')
-        scope['__block'] = self
         for cmd in self.lines:
             state, cmd_ret = cmd.run(state, scope)
+            if isinstance(cmd_ret, Continue):
+                raise Exception('h')
             if state != Continue():
                 raise Exception('hell')
             else:
                 if isinstance(cmd_ret, PlywoodValue):
                     cmd_ret = cmd_ret.get_value(scope)
-                retval += str(cmd_ret)
-                if not self.inline:
+                cmd_ret = str(cmd_ret)
+                retval += cmd_ret
+                if not self.inline and cmd_ret:
                     retval += "\n"
-        scope['__block'] = old_block
         return state, retval
 
 
@@ -144,7 +145,11 @@ class PlywoodVariable(PlywoodValue):
         return self.get(scope).get_value(scope)
 
     def get(self, scope):
-        retval = scope[self.name]
+        try:
+            retval = scope[self.name]
+        except KeyError:
+            line_no, line = this_line(scope['__input'], self.location)
+            raise PlywoodKeyError(line_no, line)
         retval.location = self.location
         return retval
 
@@ -282,11 +287,17 @@ class PlywoodFunction(PlywoodOperator):
             block = PlywoodBlock(-1, [])
         self.block = block
 
+    def run(self, state, scope):
+        if state == Continue():
+            return Continue(), self.left.get(scope).call(scope, self.right, self.block)
+        else:
+            return None
+
     def get(self, scope):
         return self.left.get(scope)
 
     def get_value(self, scope):
-        return self.left.get(scope).call(scope, self.right, self.block)
+        return self.run(Continue(), scope)[1]
 
     def __repr__(self):
         indent = type(self).INDENT
@@ -468,15 +479,18 @@ class PlywoodCallable(PlywoodValue):
         self.fn = fn
         self.accepts_block = block
 
-    def get_value(self, scope):
+    def run(self, state, scope):
         if not hasattr(self, 'location'):
             raise Exception(repr(self) + ' has no location')
         arguments = PlywoodParens(self.location, [])
         block = PlywoodBlock(self.location, [])
-        retval = self.call(scope, arguments, block)
-        # if isinstance(retval, PlywoodValue):
-        #     retval = retval.get_value(scope)
-        return retval
+        if state == Continue():
+            return Continue(), self.call(scope, arguments, block)
+        else:
+            return None
+
+    def get_value(self, scope):
+        return self.run(Continue(), scope)[1]
 
     def call(self, scope, arguments, block):
         args = (arg.get_value(scope) for arg in arguments.args)
