@@ -69,7 +69,7 @@ class PlywoodValue(object):
     def get(self, scope):
         return self.get_value(scope)
 
-    def get_item(self, scope, right):
+    def get_attr(self, scope, right):
         raise Exception("{self!r} has no property {right!r}".format(self=self, right=right))
 
     def to_value(self):
@@ -144,7 +144,7 @@ class PlywoodVariable(PlywoodValue):
     def get(self, scope):
         return scope[self.name]
 
-    def get_item(self, scope, right):
+    def get_attr(self, scope, right):
         src = scope[self.name]
         if not isinstance(src, PlywoodValue):
             key = right.get_name()
@@ -153,7 +153,7 @@ class PlywoodVariable(PlywoodValue):
             else:
                 return src[key]
         else:
-            return src.get_item(scope, right)
+            return src.get_attr(scope, right)
 
     def __eq__(self, other):
         return isinstance(other, PlywoodVariable) and other.name == self.name
@@ -202,10 +202,10 @@ class PlywoodString(PlywoodValue):
         return '{type.__name__}({self.value!r})'.format(type=type(self), self=self)
 
     def __str__(self):
-        retval = self.value
+        value = self.value
         if self.triple:
-            return '''"""{lang}\n{retval}\n"""'''.format(lang=self.lang, retval=retval)
-        return repr(retval)
+            return '''"""{lang}\n{value}\n"""'''.format(lang=self.lang, value=value)
+        return repr(value)
 
 
 class PlywoodNumber(PlywoodValue):
@@ -251,8 +251,8 @@ class PlywoodOperator(PlywoodValue):
     def get_value(self, scope):
         return self.handle(self.operator, self.left, self.right, scope)
 
-    def get_item(self, scope, right):
-        return self.get_value(scope).get_item(scope, right)
+    def get_attr(self, scope, right):
+        return self.get_value(scope).get_attr(scope, right)
 
     def __repr__(self):
         indent = type(self).INDENT
@@ -263,6 +263,8 @@ class PlywoodOperator(PlywoodValue):
 
     def __str__(self):
         op = str(self.operator)
+        if self.operator == '[]':
+            return '{self.left}[{self.right}]'.format(self=self)
         if self.operator not in ['.', '@']:
             op = ' ' + op + ' '
         return '{self.left}{op}{self.right}'.format(self=self, op=op)
@@ -397,8 +399,9 @@ class PlywoodKvp(object):
 
 
 class PlywoodList(PlywoodValue):
-    def __init__(self, location, values):
+    def __init__(self, location, values, force_list):
         self.values = values
+        self.force_list = force_list
         super(PlywoodList, self).__init__(location)
 
     def __getitem__(self, key):
@@ -409,6 +412,22 @@ class PlywoodList(PlywoodValue):
 
     def __str__(self):
         return '[' + ', '.join(str(v) for v in self.values) + ']'
+
+
+class PlywoodSlice(PlywoodValue):
+    def __init__(self, location, values, force_list):
+        self.values = values
+        self.force_list = force_list
+        super(PlywoodSlice, self).__init__(location)
+
+    def __getitem__(self, key):
+        return self.values.__getitem__(key)
+
+    def __repr__(self):
+        return type(self).__name__ + '[' + ', '.join(repr(v) for v in self.values) + ']'
+
+    def __str__(self):
+        return ', '.join(str(v) for v in self.values) + (self.force_list and ',' or '')
 
 
 class PlywoodDict(PlywoodValue):
@@ -451,7 +470,7 @@ class PlywoodPlugin(PlywoodCallable):
     def call(self, scope, arguments, block):
         return self.fn(scope, arguments, block, self.classes, self.id)
 
-    def get_item(self, scope, right):
+    def get_attr(self, scope, right):
         copy = type(self)(self.fn)
         copy.id = self.id
         copy.classes.extend(self.classes)

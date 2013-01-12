@@ -98,8 +98,8 @@ def modulo(left, right, scope):
 
 
 @PlywoodOperator.register('.')
-def get_item(left, right, scope):
-    return left.get_item(scope, right)
+def get_attr(left, right, scope):
+    return left.get_attr(scope, right)
 
 
 @PlywoodUnaryOperator.register('.')
@@ -199,6 +199,6 @@ def modulo_assign(left, right, scope):
 @PlywoodOperator.register('.=')
 def call_assign(left, right, scope):
     left = left.get_value(scope)
-    left = scope[left.get_name()].get_item(right)
+    left = scope[left.get_name()].get_attr(right)
     PlywoodOperator.handle('=', left, right)
     return right

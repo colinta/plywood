@@ -54,8 +54,11 @@ class PlywoodVariableGrammar(chomsky.Variable):
 
 class PlywoodOperatorGrammar(chomsky.Grammar):
     def __init__(self, parseme=None):
-        super(PlywoodOperatorGrammar, self).__init__(parseme)
-        self.location = self.buffer.position
+        if parseme == '[]':
+            self.parsed = chomsky.Result('[]')
+        else:
+            super(PlywoodOperatorGrammar, self).__init__(parseme)
+            self.location = self.buffer.position
 
     __metaclass__ = chomsky.OperatorGrammarType
     operators = [
@@ -63,7 +66,7 @@ class PlywoodOperatorGrammar(chomsky.Grammar):
         '**=', '//=', '+=', '-=', '/=', '*=', '%=', '.=', '=',
         'not', 'and', 'or', '&', '|', '~', '<<', '>>',
         '**',  '//',  '+',  '-',  '/',  '*',  '%',
-        '.',  # getitem
+        '.',  # get_attr
         '@',  # id/name
         ',',  # auto arg
     ]

@@ -11,6 +11,7 @@ from values import (
     PlywoodParens,
     PlywoodKvp,
     PlywoodList,
+    PlywoodSlice,
     PlywoodDict,
     PlywoodCallable,
     PlywoodPlugin,

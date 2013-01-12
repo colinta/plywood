@@ -4,7 +4,7 @@ from plywood import (
     Plywood, PlywoodValue,
     PlywoodVariable, PlywoodString, PlywoodNumber,
     PlywoodOperator, PlywoodUnaryOperator,
-    PlywoodParens, PlywoodList, PlywoodDict,
+    PlywoodParens, PlywoodList, PlywoodSlice, PlywoodDict,
     PlywoodKvp, PlywoodFunction, PlywoodBlock,
     )
 
@@ -58,6 +58,11 @@ def assert_block(test, count=None):
 
 def assert_list(test, value_count=None):
     assert isinstance(test, PlywoodList)
+    assert len(test.values) == value_count
+
+
+def assert_slice(test, value_count=None):
+    assert isinstance(test, PlywoodSlice)
     assert len(test.values) == value_count
 
 
@@ -530,7 +535,7 @@ div['something'] = 'text'
     assert_operator(test[0], '=')
     assert_operator(test[0].left, '[]')
     assert_variable(test[0].left.left, 'div')
-    assert_list(test[0].left.right, 1)
+    assert_slice(test[0].left.right, 1)
     assert_string(test[0].left.right[0], 'something')
     assert_string(test[0].right, 'text')
 
@@ -545,11 +550,30 @@ div['something']['else'] = 'text'
     assert_operator(test[0].left, '[]')
     assert_operator(test[0].left.left, '[]')
     assert_variable(test[0].left.left.left, 'div')
-    assert_list(test[0].left.left.right, 1)
+    assert_slice(test[0].left.left.right, 1)
     assert_string(test[0].left.left.right[0], 'something')
 
-    assert_list(test[0].left.right, 1)
+    assert_slice(test[0].left.right, 1)
     assert_string(test[0].left.right[0], 'else')
+    assert_string(test[0].right, 'text')
+
+
+def test_getitem_getattr():
+    test = Plywood('''
+div['item'].attr['attritem'] = 'text'
+''').parse()
+
+    assert_block(test, 1)
+    print test[0]
+    assert_operator(test[0], '=')
+    assert_operator(test[0].left, '[]')
+    assert_operator(test[0].left.left, '.')
+    assert_operator(test[0].left.left.left, '[]')
+    assert_variable(test[0].left.left.left.left, 'div')
+    assert_slice(test[0].left.left.left.right, 1)
+    assert_string(test[0].left.left.left.right.values[0], 'item')
+    assert_slice(test[0].left.right, 1)
+    assert_string(test[0].left.right[0], 'attritem')
     assert_string(test[0].right, 'text')
 
 

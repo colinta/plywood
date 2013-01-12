@@ -15,12 +15,12 @@ from values import (
     PlywoodValue,
     PlywoodOperator,
     PlywoodFunction,
-    PlywoodCallable, PlywoodPlugin,
     PlywoodUnaryOperator,
     PlywoodBlock,
     PlywoodParens,
     PlywoodKvp,
     PlywoodList,
+    PlywoodSlice,
     PlywoodDict,
     )
 from exceptions import UnindentException
@@ -114,13 +114,13 @@ class Plywood(object):
     RTL = 2
     PRECEDENCE = {
         'high':  (100, LTR),
-        '[]':    (16, LTR),
         '()':    (15, LTR),
-        ':':     (15, RTL),
-        'unary': (14, RTL),
-        '.':     (13, LTR),
-        '@':     (13, LTR),
-        '**':    (12, RTL),
+        # ':':     (15, RTL),
+        '[]':    (14, LTR),
+        '.':     (14, LTR),
+        '@':     (14, LTR),
+        '**':    (13, RTL),
+        'unary': (12, RTL),
         '&':     (11, LTR),
         '|':     (10, LTR),
         '//':    (9, LTR),
@@ -184,9 +184,19 @@ class Plywood(object):
                                                         indent=indent, len_indent=len(indent)))
 
         line = []
+        prev = None
         while not self.test(until_token):
             token = self.consume_token()
+            # there is an unfortunate exception for '['.  As an operator, it is
+            # the 'get_item' operator, but as a token it is a list token.  this
+            # must be resolved *before* figure_out_precedence is called.
+            if prev and isinstance(token, PlywoodList) and not isinstance(prev, PlywoodOperator):
+                op = PlywoodOperatorGrammar('[]')
+                op.location = token.location
+                line.append(op)
+                token = PlywoodSlice(token.location, token.values, token.force_list)
             line.append(token)
+            prev = token
 
         if line:
             return self.figure_out_precedence(line)[0]
@@ -226,8 +236,6 @@ class Plywood(object):
 
                 if isinstance(op, PlywoodParens):
                     left = PlywoodFunction(left, op)
-                elif isinstance(op, PlywoodList):
-                    left = PlywoodOperator('[]', left, op)
                 elif isinstance(op, PlywoodBlock):
                     # precedence checking for the block - it can only be bound
                     # at the lowest precedence
@@ -237,16 +245,7 @@ class Plywood(object):
                     if isinstance(left, PlywoodFunction):
                         left.block = op
                     else:
-                        left = PlywoodFunction(left, PlywoodParens([]), op)
-                elif not isinstance(op, PlywoodOperatorGrammar):
-                    # this is the 'auto call' section - when two non-operators
-                    # are next to each other, the right token is passed to the
-                    # left.  It has the lowest precedence.
-                    index -= 1
-                    right, index = self.figure_out_precedence(line, index, self.operator_precedence('low'))
-                    # right could be a series of 'token,token' operations.  flatten those out
-                    right = self.convert_to_args(right)
-                    left = PlywoodFunction(left, right)
+                        left = PlywoodFunction(left, PlywoodParens(left.location, []), op)
                 elif isinstance(op, PlywoodOperatorGrammar):
                     new_precedence = self.operator_precedence(op)
                     new_order, new_direction = new_precedence
@@ -257,7 +256,14 @@ class Plywood(object):
                         right, index = self.figure_out_precedence(line, index, new_precedence)
                     left = PlywoodOperator(str(op), left, right)
                 else:
-                    raise Exception('Unknown token "{op!r}"'.format(op=op))
+                    # this is the 'auto call' section - when two non-operators
+                    # are next to each other, the right token is passed to the
+                    # left.  It has the lowest precedence.
+                    index -= 1
+                    right, index = self.figure_out_precedence(line, index, self.operator_precedence('low'))
+                    # right could be a series of 'token,token' operations.  flatten those out
+                    right = self.convert_to_args(right)
+                    left = PlywoodFunction(left, right)
         return left, index
 
     def convert_to_args(self, token):
@@ -333,16 +339,18 @@ class Plywood(object):
         self.whitespace = 'multiline_whitespace'
 
         tokens = []
+        force_list = False
         while not self.test('list_close'):
             self.consume('whitespace')
             item = self.consume_until('comma_close_list')
             tokens.append(item)
             if self.test(','):
+                force_list = True
                 self.consume(',')
         self.consume('list_close')
         self.whitespace = prev_whitespace
 
-        return PlywoodList(location, tokens)
+        return PlywoodList(location, tokens, force_list=force_list)
 
     def consume_dict(self):
         location = self.buffer.position
