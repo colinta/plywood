@@ -141,7 +141,7 @@ class PlywoodVariable(PlywoodValue):
         return self.get(scope).set_id(scope, var)
 
     def get_value(self, scope):
-        return self.get(scope)
+        return self.get(scope).get_value(scope)
 
     def get(self, scope):
         retval = scope[self.name]
@@ -464,20 +464,34 @@ class PlywoodDict(PlywoodValue):
 
 
 class PlywoodCallable(PlywoodValue):
-    def __init__(self, fn):
+    def __init__(self, fn, block=False):
         self.fn = fn
+        self.accepts_block = block
 
     def get_value(self, scope):
         if not hasattr(self, 'location'):
             raise Exception(repr(self) + ' has no location')
         arguments = PlywoodParens(self.location, [])
         block = PlywoodBlock(self.location, [])
-        return self.call(scope, arguments, block)
+        retval = self.call(scope, arguments, block)
+        # if isinstance(retval, PlywoodValue):
+        #     retval = retval.get_value(scope)
+        return retval
 
     def call(self, scope, arguments, block):
-        return self.fn(scope, arguments, block)
+        args = (arg.get_value(scope) for arg in arguments.args)
+        kwargs = dict(
+            (item.key.get_value(scope), item.value.get_value(scope))
+                for item in arguments.kwargs
+                )
+        if self.accepts_block:
+            retval = self.fn(block, *args, **kwargs)
+        else:
+            retval = self.fn(*args, **kwargs)
+        return retval
 
     def __str__(self):
+        raise Exception('')
         return '<{type.__name__}:{name}>'.format(type=type(self), name=self.fn.__name__)
 
     def __repr__(self):

@@ -19,9 +19,5 @@ DOCTYPES = {
 
 
 @PlywoodValue.register_fn()
-def doctype(scope, arguments, block):
-    try:
-        doctype = arguments.args[0].get_value(scope)
-    except IndexError:
-        doctype = '5'
+def doctype(doctype='5'):
     return DOCTYPES.get(str(doctype), doctype)

@@ -44,6 +44,7 @@ def register_html_plugin(tag_name, is_block=False, self_closing=False):
                 value = key
             attrs += ' ' + key
             attrs += '="' + entitize(value) + '"'
+
         if classes:
             attrs += ' class="' + ' '.join(classes) + '"'
         if id:

@@ -14,7 +14,7 @@ html:
 
     div.container:
       footer:
-        p "&copy; colinta.com 2013"
+        p "&copy; colinta.com " + date(now, '%Y')
       
     
     script(type='text/javascript'):
