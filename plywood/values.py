@@ -83,9 +83,10 @@ class PlywoodValue(object):
 
 
 class PlywoodBlock(PlywoodValue):
-    def __init__(self, lines, inline=False):
+    def __init__(self, location, lines, inline=False):
         self.lines = lines
         self.inline = inline
+        super(PlywoodBlock, self).__init__(location)
 
     def append(self, line):
         self.lines.append(line)
@@ -125,8 +126,9 @@ class PlywoodBlock(PlywoodValue):
 
 
 class PlywoodVariable(PlywoodValue):
-    def __init__(self, name):
+    def __init__(self, location, name):
         self.name = name
+        super(PlywoodVariable, self).__init__(location)
 
     def get_name(self):
         return self.name
@@ -135,7 +137,9 @@ class PlywoodVariable(PlywoodValue):
         return self.get(scope).set_id(scope, var)
 
     def get_value(self, scope):
-        return self.get(scope).get_value(scope)
+        retval = self.get(scope)
+        retval.location = self.location
+        return retval.get_value(scope)
 
     def get(self, scope):
         return scope[self.name]
@@ -161,7 +165,7 @@ class PlywoodVariable(PlywoodValue):
 
 
 class PlywoodString(PlywoodValue):
-    def __init__(self, value, triple=False):
+    def __init__(self, location, value, triple=False):
         self.triple = triple
         self.lang = None
         if triple:
@@ -183,6 +187,7 @@ class PlywoodString(PlywoodValue):
                 lines = map(lambda line: line[len(indent):], lines)
                 value = "\n".join(lines)
         self.value = value
+        super(PlywoodString, self).__init__(location)
 
     def get_name(self):
         return self.value
@@ -204,8 +209,9 @@ class PlywoodString(PlywoodValue):
 
 
 class PlywoodNumber(PlywoodValue):
-    def __init__(self, value):
+    def __init__(self, location, value):
         self.value = value
+        super(PlywoodNumber, self).__init__(location)
 
     def get_value(self, scope):
         return self.value
@@ -240,6 +246,7 @@ class PlywoodOperator(PlywoodValue):
         self.operator = operator
         self.left = left
         self.right = right
+        super(PlywoodOperator, self).__init__(left.location)
 
     def get_value(self, scope):
         return self.handle(self.operator, self.left, self.right, scope)
@@ -258,14 +265,14 @@ class PlywoodOperator(PlywoodValue):
         op = str(self.operator)
         if self.operator not in ['.', '@']:
             op = ' ' + op + ' '
-        return '{self.left}{op}{self.right}'.format(type=type(self), self=self, op=op)
+        return '{self.left}{op}{self.right}'.format(self=self, op=op)
 
 
 class PlywoodFunction(PlywoodOperator):
     def __init__(self, left, right, block=None):
         super(PlywoodFunction, self).__init__('()', left, right)
         if not block:
-            block = PlywoodBlock([])
+            block = PlywoodBlock(-1, [])
         self.block = block
 
     def get(self, scope):
@@ -287,7 +294,7 @@ class PlywoodFunction(PlywoodOperator):
 
     def __str__(self):
         indent = ''
-        retval = '{indent}{self.left}{self.right}'.format(type=type(self), self=self, indent=indent)
+        retval = '{indent}{self.left}{self.right}'.format(self=self, indent=indent)
         if self.block:
             retval += ':\n{indent}    {block}'.format(self=self, block=str(self.block).replace("\n", "\n    " + indent), indent=indent)
         return retval
@@ -311,9 +318,10 @@ class PlywoodUnaryOperator(PlywoodValue):
             raise Exception('No operator handler for {operator!r}'.format(self=operator))
         return handler(value, scope)
 
-    def __init__(self, operator, value):
+    def __init__(self, location, operator, value):
         self.operator = operator
         self.value = value
+        super(PlywoodUnaryOperator, self).__init__(location)
 
     def get_value(self, scope):
         return self.handle(self.operator, self.value, scope)
@@ -323,13 +331,13 @@ class PlywoodUnaryOperator(PlywoodValue):
 
 
 class PlywoodParens(PlywoodValue):
-    def __init__(self, values, is_set=False):
+    def __init__(self, location, values, is_set=False):
         def convert_assign(value):
             if isinstance(value, PlywoodOperator) and value.operator == '=':
                 # convert the 'variable' into a string
                 if not isinstance(value.left, PlywoodVariable):
                     raise ParseException('Invalid keyword argument')
-                key = PlywoodString(value.left.name)
+                key = PlywoodString(value.location, value.left.name)
                 return PlywoodKvp(key, value.right, kwarg=True)
             return value
 
@@ -339,6 +347,7 @@ class PlywoodParens(PlywoodValue):
         self.args = filter(not_is_kvp, values)
         self.kwargs = filter(is_kvp, values)
         self.is_set = is_set
+        super(PlywoodParens, self).__init__(location)
 
     def get_value(self, scope):
         return self.args[0].get_value(scope)
@@ -388,8 +397,9 @@ class PlywoodKvp(object):
 
 
 class PlywoodList(PlywoodValue):
-    def __init__(self, values):
+    def __init__(self, location, values):
         self.values = values
+        super(PlywoodList, self).__init__(location)
 
     def __getitem__(self, key):
         return self.values.__getitem__(key)
@@ -398,12 +408,13 @@ class PlywoodList(PlywoodValue):
         return type(self).__name__ + '[' + ', '.join(repr(v) for v in self.values) + ']'
 
     def __str__(self):
-        return '[' + ', '.join(repr(v) for v in self.values) + ']'
+        return '[' + ', '.join(str(v) for v in self.values) + ']'
 
 
 class PlywoodDict(PlywoodValue):
-    def __init__(self, values):
+    def __init__(self, location, values):
         self.values = values
+        super(PlywoodDict, self).__init__(location)
 
     def __getitem__(self, key):
         return self.values.__getitem__(key)
@@ -420,8 +431,8 @@ class PlywoodCallable(PlywoodValue):
         self.fn = fn
 
     def get_value(self, scope):
-        arguments = PlywoodParens([])
-        block = PlywoodBlock([])
+        arguments = PlywoodParens(self.location, [])
+        block = PlywoodBlock(self.location, [])
         return self.call(scope, arguments, block)
 
     def call(self, scope, arguments, block):

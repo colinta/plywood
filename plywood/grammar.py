@@ -9,12 +9,12 @@ from values import (
 
 class PlywoodNumberGrammar(chomsky.Number):
     def __init__(self, parseme=None):
-        self.location = self.buffer.position
         super(PlywoodNumberGrammar, self).__init__(parseme)
+        self.location = self.buffer.position
 
     def to_value(self):
         if isinstance(self.parsed, chomsky.Float):
-            return PlywoodNumber(float(str(self)))
+            return PlywoodNumber(self.location, float(str(self)))
 
         base = 10
         if isinstance(self.parsed, chomsky.HexadecimalInteger):
@@ -23,20 +23,20 @@ class PlywoodNumberGrammar(chomsky.Number):
             base = 8
         if isinstance(self.parsed, chomsky.BinaryInteger):
             base = 2
-        return PlywoodNumber(int(str(self), base))
+        return PlywoodNumber(self.location, int(str(self), base))
 
 
 class PlywoodStringGrammar(chomsky.String):
     def __init__(self, parseme=None):
-        self.location = self.buffer.position
         super(PlywoodStringGrammar, self).__init__(parseme)
+        self.location = self.buffer.position
 
     def to_value(self):
         parsed = self.parsed
         if isinstance(parsed, chomsky.TripleSingleQuotedString) or\
            isinstance(parsed, chomsky.TripleDoubleQuotedString):
-            return PlywoodString(str(parsed), triple=True)
-        return PlywoodString(str(parsed))
+            return PlywoodString(self.location, str(parsed), triple=True)
+        return PlywoodString(self.location, str(parsed))
 
 
 class PlywoodVariableGrammar(chomsky.Variable):
@@ -45,17 +45,17 @@ class PlywoodVariableGrammar(chomsky.Variable):
     ends_with = chomsky.Chars(string.ascii_letters + '_:-' + string.digits, min=0) + chomsky.PrevIsNot(chomsky.L('-') | chomsky.L(':'))
 
     def __init__(self, parseme=None):
-        self.location = self.buffer.position
         super(PlywoodVariableGrammar, self).__init__(parseme)
+        self.location = self.buffer.position
 
     def to_value(self):
-        return PlywoodVariable(str(self))
+        return PlywoodVariable(self.location, str(self))
 
 
 class PlywoodOperatorGrammar(chomsky.Grammar):
     def __init__(self, parseme=None):
-        self.location = self.buffer.position
         super(PlywoodOperatorGrammar, self).__init__(parseme)
+        self.location = self.buffer.position
 
     __metaclass__ = chomsky.OperatorGrammarType
     operators = [

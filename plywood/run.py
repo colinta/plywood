@@ -85,9 +85,11 @@ class Plywood(object):
             else:
                 # no!?  consume just the line, and nevermind about the prev_indent
                 self.block_indent = self.prev_indent.pop()
-                return PlywoodBlock([self.consume_until('eol', inline=True)], inline=True)
+                location = self.buffer.position
+                return PlywoodBlock(location, [self.consume_until('eol', inline=True)], inline=True)
 
         parsed = []
+        location = self.buffer.position
         while self.buffer:
             if self.test('blankline'):
                 self.consume('blankline')
@@ -104,7 +106,7 @@ class Plywood(object):
                     parsed.append(line)
                 self.consume('eol')
         self.block_indent = self.prev_indent.pop()
-        return PlywoodBlock(parsed)
+        return PlywoodBlock(location, parsed)
 
  # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
@@ -216,7 +218,7 @@ class Plywood(object):
         while index < len(line):
             if isinstance(left, PlywoodOperatorGrammar):
                 right, index = self.figure_out_precedence(line, index, self.PRECEDENCE['unary'])
-                left = PlywoodUnaryOperator(operator=str(left), value=right)
+                left = PlywoodUnaryOperator(left.location, operator=str(left), value=right)
             else:
                 left = left.to_value()
                 op = line[index]
@@ -265,7 +267,7 @@ class Plywood(object):
             token = token.right
         tokens.append(token)
 
-        return PlywoodParens(tokens)
+        return PlywoodParens(token.location, tokens)
 
  # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
@@ -304,6 +306,7 @@ class Plywood(object):
                 self.consume('comment')
 
     def consume_parens(self):
+        location = self.buffer.position
         self.consume('parens_open')
         prev_whitespace = self.whitespace
         self.whitespace = 'multiline_whitespace'
@@ -321,9 +324,10 @@ class Plywood(object):
         self.consume('parens_close')
         self.whitespace = prev_whitespace
 
-        return PlywoodParens(tokens, is_set=is_set)
+        return PlywoodParens(location, tokens, is_set=is_set)
 
     def consume_list(self):
+        location = self.buffer.position
         self.consume('list_open')
         prev_whitespace = self.whitespace
         self.whitespace = 'multiline_whitespace'
@@ -338,9 +342,10 @@ class Plywood(object):
         self.consume('list_close')
         self.whitespace = prev_whitespace
 
-        return PlywoodList(tokens)
+        return PlywoodList(location, tokens)
 
     def consume_dict(self):
+        location = self.buffer.position
         self.consume('dict_open')
         prev_whitespace = self.whitespace
         self.whitespace = 'multiline_whitespace'
@@ -360,7 +365,7 @@ class Plywood(object):
         self.consume('dict_close')
         self.whitespace = prev_whitespace
 
-        return PlywoodDict(tokens)
+        return PlywoodDict(location, tokens)
 
  # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
     TESTERS = {

@@ -411,7 +411,7 @@ def test_dict_two():
     assert_dict(test, 2)
     assert_kvp(test.values[0], 'foo')
     assert_variable(test.values[0].value, 'bar')
-    assert_kvp(test.values[1], PlywoodVariable('bar'))
+    assert_kvp(test.values[1], PlywoodVariable(999, 'bar'))
     assert_variable(test.values[1].value, 'baz')
 
 
@@ -423,7 +423,7 @@ def test_dict_multiline():
     assert_dict(test, 2)
     assert_kvp(test.values[0], 'foo')
     assert_variable(test.values[0].value, 'bar')
-    assert_kvp(test.values[1], PlywoodVariable('bar'))
+    assert_kvp(test.values[1], PlywoodVariable(999, 'bar'))
     assert_variable(test.values[1].value, 'baz')
 
 

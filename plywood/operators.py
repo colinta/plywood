@@ -104,7 +104,7 @@ def get_item(left, right, scope):
 
 @PlywoodUnaryOperator.register('.')
 def unary_get_item(value, scope):
-    return PlywoodOperator.handle('.', PlywoodVariable('div'), value)
+    return PlywoodOperator.handle('.', PlywoodVariable(value.location, 'div'), value)
 
 
 @PlywoodOperator.register('@')
@@ -114,7 +114,7 @@ def set_id(left, right, scope):
 
 @PlywoodUnaryOperator.register('@')
 def unary_set_id(value, scope):
-    return PlywoodOperator.handle('@', PlywoodVariable('div'), value)
+    return PlywoodOperator.handle('@', PlywoodVariable(value.location, 'div'), value)
 
 
 @PlywoodUnaryOperator.register('-')
