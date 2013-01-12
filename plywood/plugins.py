@@ -30,8 +30,12 @@ DOCTYPES = {
 }
 
 
-@PlywoodValue.register_plugin()
-def doctype(doctype='default'):
+@PlywoodValue.register_fn()
+def doctype(scope, arguments, block):
+    try:
+        doctype = arguments.args[0].get_value(scope)
+    except IndexError:
+        doctype = '5'
     return DOCTYPES.get(doctype, doctype)
 
 
