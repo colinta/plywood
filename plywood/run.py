@@ -21,6 +21,7 @@ from values import (
     PlywoodKvp,
     PlywoodList,
     PlywoodSlice,
+    PlywoodIndices,
     PlywoodDict,
     )
 from exceptions import UnindentException
@@ -114,23 +115,22 @@ class Plywood(object):
     RTL = 2
     PRECEDENCE = {
         'high':  (100, LTR),
-        '()':    (15, LTR),
-        # ':':     (15, RTL),
-        '[]':    (14, LTR),
-        '.':     (14, LTR),
-        '@':     (14, LTR),
-        '**':    (13, RTL),
-        'unary': (12, RTL),
-        '&':     (11, LTR),
-        '|':     (10, LTR),
-        '//':    (9, LTR),
-        '/':     (9, LTR),
-        '*':     (9, LTR),
-        '+':     (8, LTR),
-        '-':     (8, LTR),
-        '%':     (7, LTR),
-        '<<':    (6, LTR),
-        '>>':    (6, LTR),
+        '()':    (16, LTR),
+        '[]':    (15, LTR),
+        '.':     (15, LTR),
+        '@':     (15, LTR),
+        '**':    (14, RTL),
+        'unary': (13, RTL),
+        '&':     (12, LTR),
+        '|':     (11, LTR),
+        '//':    (10, LTR),
+        '/':     (10, LTR),
+        '*':     (10, LTR),
+        '+':     (9, LTR),
+        '-':     (9, LTR),
+        '%':     (8, LTR),
+        '<<':    (7, LTR),
+        '>>':    (7, LTR),
         '==':    (5, LTR),
         '!=':    (5, LTR),
         '<=':    (5, LTR),
@@ -190,11 +190,14 @@ class Plywood(object):
             # there is an unfortunate exception for '['.  As an operator, it is
             # the 'get_item' operator, but as a token it is a list token.  this
             # must be resolved *before* figure_out_precedence is called.
-            if prev and isinstance(token, PlywoodList) and not isinstance(prev, PlywoodOperator):
+            is_indexable = isinstance(token, PlywoodList) or isinstance(token, PlywoodSlice)
+            prev_is_operator = not prev or isinstance(prev, PlywoodOperator)
+            if is_indexable and not prev_is_operator:
                 op = PlywoodOperatorGrammar('[]')
                 op.location = token.location
                 line.append(op)
-                token = PlywoodSlice(token.location, token.values, token.force_list)
+                if isinstance(token, PlywoodList):
+                    token = PlywoodIndices(token.location, token.values, token.force_list)
             line.append(token)
             prev = token
 
@@ -340,6 +343,7 @@ class Plywood(object):
 
         tokens = []
         force_list = False
+        is_slice = False
         while not self.test('list_close'):
             self.consume('whitespace')
             item = self.consume_until('comma_close_list')
@@ -347,10 +351,16 @@ class Plywood(object):
             if self.test(','):
                 force_list = True
                 self.consume(',')
+            elif self.test(':'):
+                self.consume(':')
+                is_slice = True
         self.consume('list_close')
         self.whitespace = prev_whitespace
 
-        return PlywoodList(location, tokens, force_list=force_list)
+        if is_slice:
+            return PlywoodSlice(location, *tokens)
+        else:
+            return PlywoodList(location, tokens, force_list=force_list)
 
     def consume_dict(self):
         location = self.buffer.position

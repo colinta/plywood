@@ -414,11 +414,11 @@ class PlywoodList(PlywoodValue):
         return '[' + ', '.join(str(v) for v in self.values) + ']'
 
 
-class PlywoodSlice(PlywoodValue):
+class PlywoodIndices(PlywoodValue):
     def __init__(self, location, values, force_list):
         self.values = values
         self.force_list = force_list
-        super(PlywoodSlice, self).__init__(location)
+        super(PlywoodIndices, self).__init__(location)
 
     def __getitem__(self, key):
         return self.values.__getitem__(key)
@@ -428,6 +428,19 @@ class PlywoodSlice(PlywoodValue):
 
     def __str__(self):
         return ', '.join(str(v) for v in self.values) + (self.force_list and ',' or '')
+
+
+class PlywoodSlice(PlywoodValue):
+    def __init__(self, start, stop):
+        self.start = start
+        self.stop = stop
+        super(PlywoodSlice, self).__init__(self.start.location)
+
+    def __repr__(self):
+        return type(self).__name__ + '({self.start!r}:{self.stop!r})'.format(self=self)
+
+    def __str__(self):
+        return '{self.start}:{self.stop}'.format(self=self)
 
 
 class PlywoodDict(PlywoodValue):

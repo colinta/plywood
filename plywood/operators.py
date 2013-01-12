@@ -1,5 +1,5 @@
 from __future__ import division
-from plywood import PlywoodOperator, PlywoodUnaryOperator, PlywoodVariable
+from plywood import PlywoodOperator, PlywoodUnaryOperator, PlywoodVariable, PlywoodSlice
 
 
 @PlywoodOperator.register('+')

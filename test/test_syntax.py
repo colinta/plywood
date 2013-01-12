@@ -4,7 +4,7 @@ from plywood import (
     Plywood, PlywoodValue,
     PlywoodVariable, PlywoodString, PlywoodNumber,
     PlywoodOperator, PlywoodUnaryOperator,
-    PlywoodParens, PlywoodList, PlywoodSlice, PlywoodDict,
+    PlywoodParens, PlywoodList, PlywoodIndices, PlywoodDict,
     PlywoodKvp, PlywoodFunction, PlywoodBlock,
     )
 
@@ -62,7 +62,7 @@ def assert_list(test, value_count=None):
 
 
 def assert_slice(test, value_count=None):
-    assert isinstance(test, PlywoodSlice)
+    assert isinstance(test, PlywoodIndices)
     assert len(test.values) == value_count
 
 
