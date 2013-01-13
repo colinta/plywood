@@ -10,6 +10,16 @@ class InvalidArguments(Exception):
     pass
 
 
+class BreakException(Exception):
+    def __init__(self, retval=''):
+        self.retval = retval
+
+
+class ContinueException(Exception):
+    def __init__(self, retval=''):
+        self.retval = retval
+
+
 def this_line(input, location):
     newline_start = location
     newline_end = location

@@ -1,6 +1,6 @@
 from chomsky import Whitespace, ParseException
 from runtime import Runtime, Continue, SuppressNewline, SuppressOneNewline
-from exceptions import PlywoodKeyError, this_line
+from exceptions import PlywoodKeyError, this_line, BreakException, ContinueException
 from functools import wraps
 
 
@@ -164,18 +164,22 @@ class PlywoodBlock(PlywoodValue):
     @check(lambda run: len(run) == 2 and isinstance(run[1], PlywoodValue), 'run values are wrong')
     def run(self, states, scope):
         retval = ''
-        for cmd in self.lines:
-            states, cmd_ret = cmd.run(states, scope)
-            cmd_ret = str(cmd_ret.python_value(scope))
-            if len(cmd_ret):
-                retval += cmd_ret
-                suppress_newline = SuppressNewline() in states or SuppressOneNewline() in states
-                if not self.inline and not suppress_newline:
-                    retval += "\n"
-                try:
-                    states.remove(SuppressOneNewline())
-                except ValueError:
-                    pass
+        try:
+            for cmd in self.lines:
+                states, cmd_ret = cmd.run(states, scope)
+                cmd_ret = str(cmd_ret.python_value(scope))
+                if len(cmd_ret):
+                    retval += cmd_ret
+                    suppress_newline = SuppressNewline() in states or SuppressOneNewline() in states
+                    if not self.inline and not suppress_newline:
+                        retval += "\n"
+                    try:
+                        states.remove(SuppressOneNewline())
+                    except ValueError:
+                        pass
+        except (BreakException, ContinueException) as e:
+            raise type(e)(retval)
+
         try:
             states.remove(SuppressNewline())
         except ValueError:
@@ -633,7 +637,8 @@ class PlywoodRuntime(PlywoodCallable):
             if self.suppress_newline:
                 states.append(SuppressOneNewline())
             return PlywoodWrapper(self.location, [states, retval])
-        return [Continue()], PlywoodWrapper(self.location, '')
+        states.append(SuppressOneNewline())
+        return states, PlywoodWrapper(self.location, '')
 
 
 class PlywoodPlugin(PlywoodCallable):

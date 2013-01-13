@@ -5,10 +5,11 @@ supports the ``else`` clause in the same way.  However, it also supports an
 ``empty`` clause must appear before the ``else`` clause.
 '''
 from plywood.values import PlywoodValue, PlywoodOperator, PlywoodVariable, PlywoodParens
-from plywood.runtime import Runtime, Continue
+from plywood.runtime import Continue
 from plywood import ParseException
 from _if import ElseState
 from empty import EmptyState
+from _break import BreakException, ContinueException
 
 
 class ForLoop(object):
@@ -45,7 +46,14 @@ def _for(states, scope, arguments, block):
             # if len(var.arguments) !=
             # scope[]
             pass
-        retval += str(block.python_value(scope))
+        try:
+            retval += str(block.python_value(scope))
+        except BreakException as e:
+            retval += e.retval
+            break
+        except ContinueException as e:
+            retval += e.retval
+            continue
     else:
         if retval is None:
             return [Continue(), EmptyState(), ElseState()], ''
