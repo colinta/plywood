@@ -12,7 +12,6 @@ def _if(state, scope, arguments, block):
         raise Exception('`if` only accepts one argument')
     arg = arguments.args[0].python_value(scope)
     if arg:
-        block.inline = True
         return [Continue()], block.get_value(scope)
     return [Continue(), ElseState()], ''
 

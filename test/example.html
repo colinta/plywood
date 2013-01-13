@@ -10,7 +10,9 @@
     <div class="container">
       <div id="page-header"></div>
       <div class="row">
-        <div class="span6"></div>
+        <div class="span6">Joey</div>
+        <div class="span6">Joe</div>
+        <div class="span6">Shabbadoo</div>
       </div>
     </div>
     <div class="container">
@@ -20,14 +22,7 @@
     </div>
     <script type="text/javascript">
       $(document).ready(function(){
-
-        $(".rounded-img").load(function() {
-          $(this).wrap(function(){
-            return '<span class="' + $(this).attr('class') + '" style="background:url(' + $(this).attr('src') + ') no-repeat center center; width: ' + $(this).width() + 'px; height: ' + $(this).height() + 'px;" />';
-          });
-          $(this).css("opacity", "0");
-        });
-
+        alert('works!');
       });
     </script>
   </body>

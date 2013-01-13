@@ -193,7 +193,7 @@ class Plywood(object):
             # the 'get_item' operator, but as a token it is a list token.  this
             # must be resolved *before* figure_out_precedence is called.
             is_indexable = isinstance(token, PlywoodList) or isinstance(token, PlywoodSlice)
-            prev_is_operator = not prev or isinstance(prev, PlywoodOperator)
+            prev_is_operator = not prev or isinstance(prev, PlywoodOperatorGrammar)
             if is_indexable and not prev_is_operator:
                 op = PlywoodOperatorGrammar('[]')
                 op.location = token.location
@@ -232,6 +232,9 @@ class Plywood(object):
 
         while index < len(line):
             if isinstance(left, PlywoodOperatorGrammar):
+                print("""=============== run.py at line {0} ===============
+left: {1!r}
+""".format(__import__('sys')._getframe().f_lineno - 2, left, ))
                 right, index = self.figure_out_precedence(line, index, self.PRECEDENCE['unary'])
                 left = PlywoodUnaryOperator(left.location, operator=str(left), value=right)
             else:
@@ -353,8 +356,10 @@ class Plywood(object):
             if self.test(','):
                 force_list = True
                 self.consume(',')
+                self.consume('whitespace')
             elif self.test(':'):
                 self.consume(':')
+                self.consume('whitespace')
                 is_slice = True
         self.consume('list_close')
         self.whitespace = prev_whitespace

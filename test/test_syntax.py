@@ -362,6 +362,13 @@ def test_list():
     assert_variable(test.values[3].right.value, 'five')
 
 
+def test_list_trailing_comma():
+    test = Plywood('[1, 2, ]').parse()[0]
+    assert_list(test, 2)
+    assert_number(test.values[0], 1)
+    assert_number(test.values[1], 2)
+
+
 def test_assign():
     test = Plywood('a = b = c + 1').parse()[0]
 
@@ -416,7 +423,7 @@ def test_dict_two():
     assert_dict(test, 2)
     assert_kvp(test.values[0], 'foo')
     assert_variable(test.values[0].value, 'bar')
-    assert_kvp(test.values[1], PlywoodVariable(999, 'bar'))
+    assert_kvp(test.values[1], PlywoodVariable(-1, 'bar'))
     assert_variable(test.values[1].value, 'baz')
 
 
@@ -428,7 +435,7 @@ def test_dict_multiline():
     assert_dict(test, 2)
     assert_kvp(test.values[0], 'foo')
     assert_variable(test.values[0].value, 'bar')
-    assert_kvp(test.values[1], PlywoodVariable(999, 'bar'))
+    assert_kvp(test.values[1], PlywoodVariable(-1, 'bar'))
     assert_variable(test.values[1].value, 'baz')
 
 
@@ -741,3 +748,18 @@ foo:
       baz
 ''').parse()
         assert test == None
+
+
+def test_for_syntax():
+    test = Plywood('''
+for value in [1,2,3]:
+    value
+''').parse()
+    assert_block(test, 1)
+    assert_function(test[0], 'for')
+    assert_parens(test[0].right, 1, 0)
+    assert_operator(test[0].right.args[0], 'in')
+    assert_variable(test[0].right.args[0].left, 'value')
+    assert_list(test[0].right.args[0].right, 3)
+    assert_block(test[0].block, 1)
+    assert_variable(test[0].block[0], 'value')

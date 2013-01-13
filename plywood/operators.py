@@ -105,13 +105,18 @@ def modulo(left, right, scope):
     return left.python_value(scope) % right.python_value(scope)
 
 
+@PlywoodOperator.register('[]')
+def get_item(left, right, scope):
+    return left.get_item(scope, right)
+
+
 @PlywoodOperator.register('.')
 def get_attr(left, right, scope):
     return left.get_attr(scope, right)
 
 
 @PlywoodUnaryOperator.register('.')
-def unary_get_item(value, scope):
+def unary_get_attr(value, scope):
     return PlywoodOperator.handle('.', PlywoodVariable(value.location, 'div'), value, scope)
 
 

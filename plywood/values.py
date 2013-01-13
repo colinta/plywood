@@ -1,5 +1,5 @@
 from chomsky import Whitespace, ParseException
-from runtime import Runtime, Continue
+from runtime import Runtime, Continue, SuppressNewline, SuppressOneNewline
 from exceptions import PlywoodKeyError, this_line
 from functools import wraps
 
@@ -131,7 +131,7 @@ class PlywoodValue(object):
         if Continue() in states:
             return [Continue()], self.get_value(scope)
         else:
-            return None
+            raise Exception(''.join(states))
 
 
 class PlywoodBlock(PlywoodValue):
@@ -171,14 +171,20 @@ class PlywoodBlock(PlywoodValue):
         retval = ''
         for cmd in self.lines:
             states, cmd_ret = cmd.run(states, scope)
-            if Continue() not in states:
-                raise Exception('hell')
-            else:
-                cmd_ret = str(cmd_ret.python_value(scope))
-                if len(cmd_ret):
-                    retval += cmd_ret
-                    if not self.inline:
-                        retval += "\n"
+            cmd_ret = str(cmd_ret.python_value(scope))
+            if len(cmd_ret):
+                retval += cmd_ret
+                suppress_newline = SuppressNewline() in states or SuppressOneNewline() in states
+                if not self.inline and not suppress_newline:
+                    retval += "\n"
+                try:
+                    states.remove(SuppressOneNewline())
+                except ValueError:
+                    pass
+        try:
+            states.remove(SuppressNewline())
+        except ValueError:
+            pass
         return states, PlywoodString(self.location, retval)
 
 
@@ -362,9 +368,10 @@ class PlywoodCallOperator(PlywoodOperator):
     @check(lambda run: len(run) == 2 and isinstance(run[1], PlywoodValue), 'run values are wrong')
     def run(self, states, scope):
         if Continue() in states:
-            return self.left.get_value(scope).call(states, scope, self.right, self.block)
+            retval = self.left.get_value(scope).call(states, scope, self.right, self.block)
+            return retval
         else:
-            return None
+            raise Exception(''.join(states))
 
     @check(lambda ret: isinstance(ret, PlywoodValue), 'Must be a PlywoodValue')
     def get_value(self, scope):
@@ -433,8 +440,8 @@ class PlywoodParens(PlywoodValue):
 
         values = map(convert_assign, values)
         is_kvp = lambda value: isinstance(value, PlywoodKvp)
-        not_is_kvp = lambda value: not isinstance(value, PlywoodKvp)
-        self.args = filter(not_is_kvp, values)
+        is_not_kvp = lambda value: not isinstance(value, PlywoodKvp)
+        self.args = filter(is_not_kvp, values)
         self.kwargs = filter(is_kvp, values)
         self.is_set = is_set
         super(PlywoodParens, self).__init__(location)
@@ -492,7 +499,7 @@ class PlywoodKvp(object):
 
 
 class PlywoodList(PlywoodValue):
-    def __init__(self, location, values, force_list):
+    def __init__(self, location, values, force_list=False):
         self.values = values
         self.force_list = force_list
         super(PlywoodList, self).__init__(location)
@@ -547,10 +554,21 @@ class PlywoodDict(PlywoodValue):
 
     @check(lambda ret: not isinstance(ret, PlywoodValue), 'Must be a python value')
     def python_value(self, scope):
-        return self.values
+        return dict((kvp.key.python_value(scope), kvp.value.python_value(scope)) for kvp in self.values)
+
+    def get_item(self, scope, right):
+        key = right.python_value(scope)
+        for kvp in self.values:
+            if kvp.key.python_value(scope) == key:
+                return kvp.value
+        raise KeyError(key)
 
     def get_attr(self, scope, right):
-        return PlywoodWrapper(self.location, self[right.get_name()])
+        key = right.get_name()
+        for kvp in self.values:
+            if kvp.key.python_value(scope) == key:
+                return kvp.value
+        raise KeyError(key)
         # if not isinstance(src, PlywoodValue):
         #     key = right.get_name()
         #     if hasattr(src, key):
@@ -559,9 +577,6 @@ class PlywoodDict(PlywoodValue):
         #         return src[key]
         # else:
         #     return src.get_attr(scope, right)
-
-    def __getitem__(self, key):
-        return self.values.__getitem__(key)
 
     def __repr__(self):
         return type(self).__name__ + '{' + ', '.join(repr(v) for v in self.values) + '}'
@@ -609,7 +624,9 @@ class PlywoodRuntime(PlywoodCallable):
     @check(lambda run: len(run) == 2 and isinstance(run[1], PlywoodValue), 'call values are wrong')
     def call(self, states, scope, arguments, block):
         if any(state in states for state in self.accepts_states):
-            return PlywoodWrapper(self.location, self.fn(states, scope, arguments, block))
+            states, retval = self.fn(states, scope, arguments, block)
+            states.append(SuppressOneNewline())
+            return PlywoodWrapper(self.location, [states, retval])
         return [Continue()], PlywoodWrapper(self.location, '')
 
 
@@ -677,5 +694,10 @@ def PlywoodWrapper(location, value):
     if isinstance(value, list):
         return PlywoodList(location, value)
     if isinstance(value, dict):
-        return PlywoodDict(location, value)
+        values = []
+        for key, value in value.iteritems():
+            key = PlywoodWrapper(location, key)
+            value = PlywoodWrapper(location, value)
+            values.append(PlywoodKvp(key, value))
+        return PlywoodDict(location, values)
     return PlywoodPythonValue(location, value)

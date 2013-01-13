@@ -27,3 +27,15 @@ class Continue(Runtime):
     """
     The most basic of all states, the Continue state indicates "all good!".
     """
+
+
+class SuppressNewline(Runtime):
+    """
+    Suppresses newlines for the entire block
+    """
+
+
+class SuppressOneNewline(SuppressNewline):
+    """
+    Suppresses newline for the current command
+    """

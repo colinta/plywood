@@ -111,3 +111,71 @@ p.section: span@warning.gray.span12: em: 'text'
     print 'actual:', actual
     print 'desired:', desired
     assert desired == actual
+
+
+def test_if():
+    input = '''
+if self.test:
+    'true'
+'''
+    desired = 'true\n'
+    actual = plywood(input, {'test': True})
+    print 'actual:', actual
+    print 'desired:', desired
+    assert desired == actual
+
+
+def test_elif():
+    input = '''
+if self.falsey:
+    'false'
+elif self.truthy:
+    'true'
+'''
+    desired = 'true\n'
+    actual = plywood(input, {'falsey': False, 'truthy': True})
+    print 'actual:', actual
+    print 'desired:', desired
+    assert desired == actual
+
+
+def test_else():
+    input = '''
+if self.falsey:
+    'false'
+else:
+    'true'
+'''
+    desired = 'true\n'
+    actual = plywood(input, {'falsey': False, 'truthy': True})
+    print 'actual:', actual
+    print 'desired:', desired
+    assert desired == actual
+
+
+def test_elif_else():
+    input = '''
+if self.falsey:
+    'false'
+elif self.falsey:
+    'falsey'
+else:
+    'true'
+'''
+    desired = 'true\n'
+    actual = plywood(input, {'falsey': False, 'truthy': True})
+    print 'actual:', actual
+    print 'desired:', desired
+    assert desired == actual
+
+
+def test_for():
+    input = '''
+for item in ['i', 't', 'e', 'm', 's', ]:
+    item
+'''
+    desired = 'i\nt\ne\nm\ns\n'
+    actual = plywood(input, {'falsey': False, 'truthy': True})
+    print 'actual:', actual
+    print 'desired:', desired
+    assert desired == actual

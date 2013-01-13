@@ -7,7 +7,12 @@ desired = open('test/example.html').read()
 
 
 def test_example():
-    actual = plywood(input, {'title': 'Welcome!', 'keywords': 'plywood'}, indent='  ')
+    vals = {
+        'title': 'Welcome!',
+        'keywords': 'plywood',
+        'persons': ['Joey', 'Joe', 'Shabbadoo'],
+        }
+    actual = plywood(input, vals, indent='  ')
     if actual != desired:
         diff = unified_diff(desired.splitlines(), actual.splitlines())
         print diff
