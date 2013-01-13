@@ -49,9 +49,9 @@ class Plywood(object):
         return "{type.__name__}({self.buffer!r})".format(type=type(self), self=self)
 
     def run(self, self_scope={}):
-        self.compile()
+        parsed = self.compile()
         new_scope = PlywoodValue.new_scope(self.options, self.input, self_scope)
-        return self.parsed.python_value(new_scope)
+        return parsed.python_value(new_scope)
 
     def compile(self):
         if self.parsed is None:
