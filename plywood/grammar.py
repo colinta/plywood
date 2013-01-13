@@ -12,7 +12,7 @@ class PlywoodNumberGrammar(chomsky.Number):
         super(PlywoodNumberGrammar, self).__init__(parseme)
         self.location = self.buffer.position
 
-    def to_value(self):
+    def plywood_value(self):
         if isinstance(self.parsed, chomsky.Float):
             return PlywoodNumber(self.location, float(str(self)))
 
@@ -31,7 +31,7 @@ class PlywoodStringGrammar(chomsky.String):
         super(PlywoodStringGrammar, self).__init__(parseme)
         self.location = self.buffer.position
 
-    def to_value(self):
+    def plywood_value(self):
         parsed = self.parsed
         if isinstance(parsed, chomsky.TripleSingleQuotedString) or\
            isinstance(parsed, chomsky.TripleDoubleQuotedString):
@@ -48,7 +48,7 @@ class PlywoodVariableGrammar(chomsky.Variable):
         super(PlywoodVariableGrammar, self).__init__(parseme)
         self.location = self.buffer.position
 
-    def to_value(self):
+    def plywood_value(self):
         return PlywoodVariable(self.location, str(self))
 
 
@@ -64,7 +64,8 @@ class PlywoodOperatorGrammar(chomsky.Grammar):
     operators = [
         '==', '!=', '<=', '>=', '<', '>',
         '**=', '//=', '+=', '-=', '/=', '*=', '%=', '.=', '=',
-        'not', 'and', 'or', '&', '|', '~', '<<', '>>',
+        'is', 'in', 'not', 'and', 'or',
+        '&', '|', '~', '<<', '>>',
         '**',  '//',  '+',  '-',  '/',  '*',  '%',
         '.',  # get_attr
         '@',  # id/name

@@ -50,7 +50,7 @@ class Plywood(object):
     def run(self, self_scope={}):
         parsed = self.parse()
         new_scope = PlywoodValue.new_scope(self.options, self.input, self_scope)
-        return parsed.get_value(new_scope)
+        return parsed.python_value(new_scope)
 
     def parse(self):
         return self.consume_block('')
@@ -114,10 +114,12 @@ class Plywood(object):
     RTL = 2
     PRECEDENCE = {
         'high':  (100, LTR),
-        '()':    (16, LTR),
-        '[]':    (15, LTR),
-        '.':     (15, LTR),
-        '@':     (15, LTR),
+        '()':    (17, LTR),
+        '[]':    (16, LTR),
+        '.':     (16, LTR),
+        '@':     (16, LTR),
+        'in':    (15, RTL),
+        'is':    (15, RTL),
         '**':    (14, RTL),
         'unary': (13, RTL),
         '&':     (12, LTR),
@@ -226,14 +228,14 @@ class Plywood(object):
         left = line[index]
         index += 1
         if len(line) == index:
-            return left.to_value(), index
+            return left.plywood_value(), index
 
         while index < len(line):
             if isinstance(left, PlywoodOperatorGrammar):
                 right, index = self.figure_out_precedence(line, index, self.PRECEDENCE['unary'])
                 left = PlywoodUnaryOperator(left.location, operator=str(left), value=right)
             else:
-                left = left.to_value()
+                left = left.plywood_value()
                 op = line[index]
                 index += 1
 

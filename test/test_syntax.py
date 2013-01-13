@@ -732,38 +732,12 @@ baz: 'baz'
     assert_string(test[3].block[0], 'baz')
 
 
-def test_more_indent():
-    test = Plywood("""
-# twitter bootstrap layout
-doctype(5)
-html:
-  head:
-    title: self.title
-    script(type='text/javascript', src='https://ajax.googleapis.com/ajax/libs/jquery/1.8.3/jquery.min.js')
-    br(rel='stylesheet', href='http://twitter.github.com/bootstrap/1.4.0/bootstrap.min.css')
-    # block 'head'
-
-  body:
-    div.container:
-      @page-header
-      .row:
-        .span6:
-          # block 'yield'
-
-    div.container:
-      footer:
-        p "&copy; colinta.com {date('%Y')}"
-    script(type='text/javascript'):
-      '''javascript
-      $(document).ready(function(){
-
-        $(".rounded-img").load(function() {
-          $(this).wrap(function(){
-            return '<span class="' + $(this).attr('class') + '" style="background:url(' + $(this).attr('src') + ') no-repeat center center; width: ' + $(this).width() + 'px; height: ' + $(this).height() + 'px;" />';
-          });
-          $(this).css("opacity", "0");
-        });
-
-      });
-      '''
-"""[1:-1]).parse()
+def test_mixed_block_fail():
+    with raises(ParseException):
+        test = Plywood('''
+foo:
+    bar:
+        baz
+      baz
+''').parse()
+        assert test == None

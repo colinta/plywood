@@ -14,7 +14,8 @@ from values import (
     PlywoodIndices,
     PlywoodSlice,
     PlywoodDict,
-    PlywoodCallOperatorable,
+    PlywoodRuntime,
+    PlywoodFunction,
     PlywoodPlugin,
     )
 from run import plywood, Plywood

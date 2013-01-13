@@ -8,6 +8,10 @@ html:
       title: 'Welcome.'
     script(type='text/javascript', src='https://ajax.googleapis.com/ajax/libs/jquery/1.8.3/jquery.min.js')
     link(rel='stylesheet', href='http://twitter.github.com/bootstrap/1.4.0/bootstrap.min.css')
+    if 'author' in self:
+      meta name='author', content=self.author
+    if 'keywords' in self:
+      meta name='keywords', content=self.keywords
 
   body:
     div.container:
@@ -18,18 +22,17 @@ html:
     div.container:
       footer:
         p "&copy; colinta.com " + date(now, '%Y')
-      
-    
+
     script(type='text/javascript'):
       '''javascript
-      $(document).ready(function(){
+    $(document).ready(function(){
 
-        $(".rounded-img").load(function() {
-          $(this).wrap(function(){
-            return '<span class="' + $(this).attr('class') + '" style="background:url(' + $(this).attr('src') + ') no-repeat center center; width: ' + $(this).width() + 'px; height: ' + $(this).height() + 'px;" />';
-          });
-          $(this).css("opacity", "0");
+      $(".rounded-img").load(function() {
+        $(this).wrap(function(){
+          return '<span class="' + $(this).attr('class') + '" style="background:url(' + $(this).attr('src') + ') no-repeat center center; width: ' + $(this).width() + 'px; height: ' + $(this).height() + 'px;" />';
         });
-
+        $(this).css("opacity", "0");
       });
+
+    });
       '''

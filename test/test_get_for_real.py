@@ -45,7 +45,7 @@ html:
     actual = plywood(input)
     print 'actual:', actual
     print 'desired:', desired
-    assert actual == desired
+    assert desired == actual
 
 
 def test_nested_inline_tags():
@@ -65,7 +65,7 @@ html:
     actual = plywood(input)
     print 'actual:', actual
     print 'desired:', desired
-    assert actual == desired
+    assert desired == actual
 
 
 def test_lotso_inlines():
@@ -76,7 +76,7 @@ p: span: em: 'text'
     actual = plywood(input)
     print 'actual:', actual
     print 'desired:', desired
-    assert actual == desired
+    assert desired == actual
 
 
 def test_class_shorthand():
@@ -87,7 +87,7 @@ p.important: span.warning.gray: em: 'text'
     actual = plywood(input)
     print 'actual:', actual
     print 'desired:', desired
-    assert actual == desired
+    assert desired == actual
 
 
 def test_id_shorthand():
@@ -99,7 +99,7 @@ p@label2: 'text'
     actual = plywood(input)
     print 'actual:', actual
     print 'desired:', desired
-    assert actual == desired
+    assert desired == actual
 
 
 def test_class_id_shorthand():
@@ -110,4 +110,4 @@ p.section: span@warning.gray.span12: em: 'text'
     actual = plywood(input)
     print 'actual:', actual
     print 'desired:', desired
-    assert actual == desired
+    assert desired == actual

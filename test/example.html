@@ -4,6 +4,7 @@
     <title>Welcome!</title>
     <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.8.3/jquery.min.js"></script>
     <link rel="stylesheet" href="http://twitter.github.com/bootstrap/1.4.0/bootstrap.min.css" />
+    <meta name="keywords" content="plywood" />
   </head>
   <body>
     <div class="container">
@@ -19,14 +20,14 @@
     </div>
     <script type="text/javascript">
       $(document).ready(function(){
-      
+
         $(".rounded-img").load(function() {
           $(this).wrap(function(){
             return '<span class="' + $(this).attr('class') + '" style="background:url(' + $(this).attr('src') + ') no-repeat center center; width: ' + $(this).width() + 'px; height: ' + $(this).height() + 'px;" />';
           });
           $(this).css("opacity", "0");
         });
-      
+
       });
     </script>
   </body>

@@ -8,13 +8,22 @@ instead of built-in, hard-coded constructs.
 """
 
 
-class Continue(object):
-    """
-    The most basic of all states, the Continue state indicates "all good!".
-    """
-    singleton = None
+class RuntimeMetaclass(type):
+    def __init__(cls, classname, bases, cls_dict):
+        super(RuntimeMetaclass, cls).__init__(classname, bases, cls_dict)
+        cls.singleton = None
+
+
+class Runtime(object):
+    __metaclass__ = RuntimeMetaclass
 
     def __new__(cls):
         if not cls.singleton:
-            cls.singleton = super(Continue, cls).__new__(cls)
+            cls.singleton = super(Runtime, cls).__new__(cls)
         return cls.singleton
+
+
+class Continue(Runtime):
+    """
+    The most basic of all states, the Continue state indicates "all good!".
+    """
