@@ -1,7 +1,14 @@
+'''
+Implements the ``for`` loop clause.  The syntax is the same as python, and it
+supports the ``else`` clause in the same way.  However, it also supports an
+``empty`` clause, which is only executed if the iterator was empty.  The
+``empty`` clause must appear before the ``else`` clause.
+'''
 from plywood.values import PlywoodValue, PlywoodOperator, PlywoodVariable, PlywoodParens
-from plywood.runtime import Continue
+from plywood.runtime import Runtime, Continue
 from plywood import ParseException
 from _if import ElseState
+from empty import EmptyState
 
 
 class ForLoop(object):
@@ -9,7 +16,7 @@ class ForLoop(object):
 
 
 @PlywoodValue.register_runtime('for')
-def _for(state, scope, arguments, block):
+def _for(states, scope, arguments, block):
     if len(arguments.args) != 1 \
         or len(arguments.kwargs) \
         or not isinstance(arguments.args[0], PlywoodOperator) \
@@ -26,8 +33,10 @@ def _for(state, scope, arguments, block):
                 raise ParseException('`for` expects a variable name or tuple of variable names')
     iterator = arguments.args[0].right.python_value(scope)
 
-    retval = ''
+    retval = None
     for for_value in iterator:
+        if retval is None:
+            retval = ''
         if isinstance(var, PlywoodVariable):
             varname = var.get_name()
             scope[varname] = for_value
@@ -38,5 +47,7 @@ def _for(state, scope, arguments, block):
             pass
         retval += str(block.python_value(scope))
     else:
+        if retval is None:
+            return [Continue(), EmptyState(), ElseState()], ''
         return [Continue(), ElseState()], retval
     return [Continue()], retval
