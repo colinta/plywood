@@ -27,16 +27,12 @@ class PlywoodValue(object):
         cls.GLOBAL[name] = value
 
     @classmethod
-    def register_runtime(cls, name=None, accepts=[Continue()]):
+    def register_runtime(cls, name=None, **kwargs):
         def decorator(fn):
-            if not isinstance(accepts, list):
-                accepted_states = [accepts]
-            else:
-                accepted_states = accepts
             plugin_name = name
             if plugin_name is None:
                 plugin_name = fn.__name__
-            cls.RUNTIME[plugin_name] = (fn, accepted_states)
+            cls.RUNTIME[plugin_name] = (fn, kwargs)
             return fn
         return decorator
 
@@ -94,9 +90,8 @@ class PlywoodValue(object):
         scope['__indent'] = indent_apply
         scope.update(cls.GLOBAL)
         for key, runtime in cls.RUNTIME.iteritems():
-            fn = runtime[0]
-            accepts = runtime[1]
-            value = PlywoodRuntime(fn, accepts)
+            fn, kwargs = runtime
+            value = PlywoodRuntime(fn, **kwargs)
             scope[key] = value
         for key, fn in cls.FUNCTIONS.iteritems():
             value = PlywoodFunction(fn)
@@ -617,15 +612,26 @@ class PlywoodCallable(PlywoodValue):
 
 
 class PlywoodRuntime(PlywoodCallable):
-    def __init__(self, fn, accepts=False):
+    '''
+    Runtime plugins are things like ``if``, ``for``, ``while``, and other
+    language constructs.
+    '''
+    def __init__(self, fn, accepts=[Continue()], suppress_newline=True):
+        if not isinstance(accepts, list):
+            accepted_states = [accepts]
+        else:
+            accepted_states = accepts
+
         self.fn = fn
-        self.accepts_states = accepts
+        self.accepts_states = accepted_states
+        self.suppress_newline = suppress_newline
 
     @check(lambda run: len(run) == 2 and isinstance(run[1], PlywoodValue), 'call values are wrong')
     def call(self, states, scope, arguments, block):
         if any(state in states for state in self.accepts_states):
             states, retval = self.fn(states, scope, arguments, block)
-            states.append(SuppressOneNewline())
+            if self.suppress_newline:
+                states.append(SuppressOneNewline())
             return PlywoodWrapper(self.location, [states, retval])
         return [Continue()], PlywoodWrapper(self.location, '')
 
