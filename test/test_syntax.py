@@ -80,142 +80,142 @@ def assert_dict(test, count=None):
 
 
 def test_variable():
-    test = Plywood('foo').parse()[0]
+    test = Plywood('foo').compile()[0]
     assert_variable(test, 'foo')
 
 
 def test_variable_dashes():
-    test = Plywood('foo-bar').parse()[0]
+    test = Plywood('foo-bar').compile()[0]
     assert_variable(test, 'foo-bar')
 
 
 def test_variable_colons():
-    test = Plywood('foo:bar').parse()[0]
+    test = Plywood('foo:bar').compile()[0]
     assert_variable(test, 'foo:bar')
 
 
 def test_blank():
-    assert [] == Plywood('# comment').parse()
-    assert [] == Plywood('\n\n# comment\n\n').parse()
-    assert [] == Plywood('\n\n# comment\n # \n').parse()
-    assert [] == Plywood('\n\n# comment\n # \n#').parse()
-    assert [] == Plywood('\n\n# comment\n   \n#').parse()
+    assert [] == Plywood('# comment').compile()
+    assert [] == Plywood('\n\n# comment\n\n').compile()
+    assert [] == Plywood('\n\n# comment\n # \n').compile()
+    assert [] == Plywood('\n\n# comment\n # \n#').compile()
+    assert [] == Plywood('\n\n# comment\n   \n#').compile()
 
 
 def test_comment_with_variable():
-    test = Plywood('foo # comment').parse()[0]
+    test = Plywood('foo # comment').compile()[0]
     assert_variable(test, 'foo')
 
-    test = Plywood('foo # comment\nbar # comment').parse()[0]
+    test = Plywood('foo # comment\nbar # comment').compile()[0]
     assert_variable(test, 'foo')
 
-    test = Plywood('\n# comment1\nfoo # comment2\n\n\n  # comment3').parse()[0]
+    test = Plywood('\n# comment1\nfoo # comment2\n\n\n  # comment3').compile()[0]
     assert_variable(test, 'foo')
 
 
 def test_string():
-    test = Plywood('"foo"').parse()[0]
+    test = Plywood('"foo"').compile()[0]
     assert_string(test, 'foo')
 
 
 def test_integer():
-    test = Plywood('1').parse()[0]
+    test = Plywood('1').compile()[0]
     assert_number(test, 1)
 
 
 def test_neg_integer():
-    test = Plywood('-1').parse()[0]
+    test = Plywood('-1').compile()[0]
     assert_number(test, -1)
 
 
 def test_float():
-    test = Plywood('0.123').parse()[0]
+    test = Plywood('0.123').compile()[0]
     assert_number(test, 0.123)
 
-    test = Plywood('1.123').parse()[0]
+    test = Plywood('1.123').compile()[0]
     assert_number(test, 1.123)
 
 
 def test_neg_float():
-    test = Plywood('-0.123').parse()[0]
+    test = Plywood('-0.123').compile()[0]
     assert_number(test, -0.123)
 
 
 def test_hexadecimal():
-    test = Plywood('0x1e32').parse()[0]
+    test = Plywood('0x1e32').compile()[0]
     assert_number(test, 7730)
 
-    test = Plywood('0x0001ea').parse()[0]
+    test = Plywood('0x0001ea').compile()[0]
     assert_number(test, 490)
 
-    test = Plywood('0x0').parse()[0]
+    test = Plywood('0x0').compile()[0]
     assert_number(test, 0)
 
-    test = Plywood('0xFFFF').parse()[0]
+    test = Plywood('0xFFFF').compile()[0]
     assert_number(test, 65535)
 
 
 def test_octal():
-    test = Plywood('0o716').parse()[0]
+    test = Plywood('0o716').compile()[0]
     assert_number(test, 462)
 
-    test = Plywood('0o0716').parse()[0]
+    test = Plywood('0o0716').compile()[0]
     assert_number(test, 462)
 
 
 def test_binary():
-    test = Plywood('0b010101').parse()[0]
+    test = Plywood('0b010101').compile()[0]
     assert_number(test, 21)
 
 
 def test_neg_hexadecimal():
-    test = Plywood('-0x1e32').parse()[0]
+    test = Plywood('-0x1e32').compile()[0]
     assert_number(test, -7730)
 
 
 def test_unary():
-    test = Plywood('-bar').parse()[0]
+    test = Plywood('-bar').compile()[0]
     assert_unary(test, '-')
     assert_variable(test.value, 'bar')
 
 
 def test_addition():
-    test = Plywood('foo + bar').parse()[0]
+    test = Plywood('foo + bar').compile()[0]
     assert_operator(test, '+')
     assert_variable(test.left, 'foo')
     assert_variable(test.right, 'bar')
 
 
 def test_multiplication():
-    test = Plywood('foo * bar').parse()[0]
+    test = Plywood('foo * bar').compile()[0]
     assert_operator(test, '*')
     assert_variable(test.left, 'foo')
     assert_variable(test.right, 'bar')
 
 
 def test_add_mult_precedence():
-    test = Plywood('foo + bar * baz').parse()[0]
+    test = Plywood('foo + bar * baz').compile()[0]
     assert_operator(test, '+')
     assert_variable(test.left, 'foo')
     assert_operator(test.right, '*')
     assert_variable(test.right.left, 'bar')
     assert_variable(test.right.right, 'baz')
 
-    test = Plywood('foo * bar + baz').parse()[0]
+    test = Plywood('foo * bar + baz').compile()[0]
     assert_operator(test, '+')
     assert_variable(test.right, 'baz')
     assert_operator(test.left, '*')
     assert_variable(test.left.left, 'foo')
     assert_variable(test.left.right, 'bar')
 
-    test = Plywood('foo + bar + baz').parse()[0]
+    test = Plywood('foo + bar + baz').compile()[0]
     assert_operator(test, '+')
     assert_variable(test.right, 'baz')
     assert_operator(test.left, '+')
     assert_variable(test.left.left, 'foo')
     assert_variable(test.left.right, 'bar')
 
-    test = Plywood('foo * bar + baz * foo').parse()[0]
+    test = Plywood('foo * bar + baz * foo').compile()[0]
     assert_operator(test, '+')
     assert_operator(test.left, '*')
     assert_variable(test.left.left, 'foo')
@@ -226,14 +226,14 @@ def test_add_mult_precedence():
 
 
 def test_unary_precedence():
-    test = Plywood('-~bar').parse()[0]
+    test = Plywood('-~bar').compile()[0]
     assert_unary(test, '-')
     assert_unary(test.value, '~')
     assert_variable(test.value.value, 'bar')
 
 
 def test_precedence():
-    test = Plywood('1 < 2 and 2 > 1 and 2+2 == 4').parse()[0]
+    test = Plywood('1 < 2 and 2 > 1 and 2+2 == 4').compile()[0]
     assert_operator(test, 'and')
     assert_operator(test.left, 'and')
     assert_operator(test.left.left, '<')
@@ -245,28 +245,28 @@ def test_precedence():
     assert_number(test.right.left.right, 2)
     assert_number(test.right.right, 4)
 
-    test = Plywood('2*3**4').parse()[0]
+    test = Plywood('2*3**4').compile()[0]
     assert_operator(test, '*')
     assert_number(test.left, 2)
     assert_operator(test.right, '**')
     assert_number(test.right.left, 3)
     assert_number(test.right.right, 4)
 
-    test = Plywood('2**3*4').parse()[0]
+    test = Plywood('2**3*4').compile()[0]
     assert_operator(test, '*')
     assert_operator(test.left, '**')
     assert_number(test.left.left, 2)
     assert_number(test.left.right, 3)
     assert_number(test.right, 4)
 
-    test = Plywood('2**3**4').parse()[0]
+    test = Plywood('2**3**4').compile()[0]
     assert_operator(test, '**')
     assert_number(test.left, 2)
     assert_operator(test.right, '**')
     assert_number(test.right.left, 3)
     assert_number(test.right.right, 4)
 
-    test = Plywood('-foo + ~bar').parse()[0]
+    test = Plywood('-foo + ~bar').compile()[0]
     assert_operator(test, '+')
     assert_unary(test.left, '-')
     assert_variable(test.left.value, 'foo')
@@ -275,7 +275,7 @@ def test_precedence():
 
 
 def test_parens():
-    test = Plywood('(-foo + ~bar)').parse()[0]
+    test = Plywood('(-foo + ~bar)').compile()[0]
     assert_parens(test, 1)
 
     assert_operator(test.args[0], '+')
@@ -286,7 +286,7 @@ def test_parens():
 
 
 def test_parens_two():
-    test = Plywood('(a, b)').parse()[0]
+    test = Plywood('(a, b)').compile()[0]
     assert_parens(test, 2)
 
     assert_variable(test.args[0], 'a')
@@ -294,12 +294,12 @@ def test_parens_two():
 
 
 def test_args_two():
-    test = Plywood('foo a, b').parse()[0]
+    test = Plywood('foo a, b').compile()[0]
     assert_function(test, 'foo')
 
 
 def test_args_three():
-    test = Plywood('foo a, b, c').parse()[0]
+    test = Plywood('foo a, b, c').compile()[0]
     assert_function(test, 'foo')
 
     assert_variable(test.right.args[0], 'a')
@@ -308,7 +308,7 @@ def test_args_three():
 
 
 def test_args_three_kwarg():
-    test = Plywood('foo a, b, d=e, c, f=g').parse()[0]
+    test = Plywood('foo a, b, d=e, c, f=g').compile()[0]
     assert_function(test, 'foo')
 
     assert_parens(test.right, 3, 2)
@@ -326,7 +326,7 @@ def test_parens_multiline():
     a,
     b,
     c,
-)''').parse()[0]
+)''').compile()[0]
     assert_parens(test, 3)
 
     assert_variable(test.args[0], 'a')
@@ -339,7 +339,7 @@ def test_parens_args():
     a,
     b,
     c=d,
-)''').parse()[0]
+)''').compile()[0]
     assert_parens(test, 2, 1)
 
     assert_variable(test.args[0], 'a')
@@ -349,7 +349,7 @@ def test_parens_args():
 
 
 def test_list():
-    test = Plywood('[1, "two", three, (four) + -five]').parse()[0]
+    test = Plywood('[1, "two", three, (four) + -five]').compile()[0]
     assert_list(test, 4)
 
     assert_number(test.values[0], 1)
@@ -363,14 +363,14 @@ def test_list():
 
 
 def test_list_trailing_comma():
-    test = Plywood('[1, 2, ]').parse()[0]
+    test = Plywood('[1, 2, ]').compile()[0]
     assert_list(test, 2)
     assert_number(test.values[0], 1)
     assert_number(test.values[1], 2)
 
 
 def test_assign():
-    test = Plywood('a = b = c + 1').parse()[0]
+    test = Plywood('a = b = c + 1').compile()[0]
 
     assert_operator(test, '=')
     assert_variable(test.left, 'a')
@@ -382,7 +382,7 @@ def test_assign():
 
 
 def test_function():
-    test = Plywood('foo(bar, baz)').parse()[0]
+    test = Plywood('foo(bar, baz)').compile()[0]
     assert_function(test, 'foo')
     assert_parens(test.right, 2)
 
@@ -391,7 +391,7 @@ def test_function():
 
 
 def test_function_kwargs():
-    test = Plywood('foo(bar, 1, key="value")').parse()[0]
+    test = Plywood('foo(bar, 1, key="value")').compile()[0]
     assert_function(test, 'foo')
     assert_variable(test.left, 'foo')
     assert_parens(test.right, 2, 1)
@@ -402,7 +402,7 @@ def test_function_kwargs():
 
 
 def test_autofunction():
-    test = Plywood('foo bar, baz(a b), c=d').parse()[0]
+    test = Plywood('foo bar, baz(a b), c=d').compile()[0]
     assert_function(test, 'foo')
 
     assert_variable(test.right.args[0], 'bar')
@@ -412,14 +412,14 @@ def test_autofunction():
 
 
 def test_dict():
-    test = Plywood('{"foo": bar}').parse()[0]
+    test = Plywood('{"foo": bar}').compile()[0]
     assert_dict(test, 1)
     assert_kvp(test.values[0], 'foo')
     assert_variable(test.values[0].value, 'bar')
 
 
 def test_dict_two():
-    test = Plywood('{"foo": bar, bar: baz}').parse()[0]
+    test = Plywood('{"foo": bar, bar: baz}').compile()[0]
     assert_dict(test, 2)
     assert_kvp(test.values[0], 'foo')
     assert_variable(test.values[0].value, 'bar')
@@ -431,7 +431,7 @@ def test_dict_multiline():
     test = Plywood('''{
         "foo": bar,
         "bar": baz
-        }''').parse()[0]
+        }''').compile()[0]
     assert_dict(test, 2)
     assert_kvp(test.values[0], 'foo')
     assert_variable(test.values[0].value, 'bar')
@@ -440,7 +440,7 @@ def test_dict_multiline():
 
 
 def test_multiline_commands():
-    test = Plywood("foo\nbar").parse()
+    test = Plywood("foo\nbar").compile()
     assert_variable(test[0], 'foo')
     assert_variable(test[1], 'bar')
 
@@ -453,7 +453,7 @@ foo
 123
 bar
 foo(bar, item='value')
-""").parse()
+""").compile()
     assert_variable(test[0], 'foo')
     assert_string(test[1], 'foo')
     assert_number(test[2], 1)
@@ -464,7 +464,7 @@ foo(bar, item='value')
 
 def test_block_indent_fail():
     with raises(ParseException):
-        test = Plywood('   foo').parse()
+        test = Plywood('   foo').compile()
         assert test == None
 
 
@@ -472,7 +472,7 @@ def test_block():
     test = Plywood('''
 if True or False:
     print "True!"
-''').parse()
+''').compile()
 
     assert_block(test, 1)
     assert_function(test[0], 'if')
@@ -492,7 +492,7 @@ def test_inline_block():
     """
     test = Plywood('''
 if True or False:  print "True!"
-''').parse()
+''').compile()
 
     assert_block(test, 1)
     assert_function(test[0], 'if')
@@ -509,7 +509,7 @@ if True or False:  print "True!"
 def test_happy_fun_block():
     test = Plywood('''
 div: p: 'text'
-''').parse()
+''').compile()
 
     assert_block(test, 1)
     assert_function(test[0], 'div')
@@ -522,7 +522,7 @@ div: p: 'text'
 def test_classy_div():
     test = Plywood('''
 div.classy: 'text'
-''').parse()
+''').compile()
 
     assert_block(test, 1)
     assert_function(test[0])
@@ -536,7 +536,7 @@ div.classy: 'text'
 def test_getitem():
     test = Plywood('''
 div['something'] = 'text'
-''').parse()
+''').compile()
 
     assert_block(test, 1)
     assert_operator(test[0], '=')
@@ -550,7 +550,7 @@ div['something'] = 'text'
 def test_getitem_2():
     test = Plywood('''
 div['something']['else'] = 'text'
-''').parse()
+''').compile()
 
     assert_block(test, 1)
     assert_operator(test[0], '=')
@@ -568,7 +568,7 @@ div['something']['else'] = 'text'
 def test_getitem_getattr():
     test = Plywood('''
 div['item'].attr['attritem'] = 'text'
-''').parse()
+''').compile()
 
     assert_block(test, 1)
     print test[0]
@@ -587,7 +587,7 @@ div['item'].attr['attritem'] = 'text'
 def test_id_div():
     test = Plywood('''
 div@any_id: 'text'
-''').parse()
+''').compile()
 
     assert_block(test, 1)
     assert_function(test[0])
@@ -601,7 +601,7 @@ div@any_id: 'text'
 def test_classy_id_div():
     test = Plywood('''
 div.classy@any_id: 'text'
-''').parse()
+''').compile()
 
     assert_block(test, 1)
     assert_function(test[0])
@@ -618,7 +618,7 @@ def test_multi_inline():
     test = Plywood('''
 foo: bar
 foo: bar
-''').parse()
+''').compile()
     assert_block(test, 2)
     assert_function(test[0], 'foo')
     assert_block(test[0].block, 1)
@@ -634,7 +634,7 @@ foo:
 foo:
 foo:
 foo:
-''').parse()
+''').compile()
     assert_block(test, 4)
     assert_function(test[0], 'foo')
     assert_block(test[0].block, 0)
@@ -652,7 +652,7 @@ foo:
     foo:
         foo:
             foo:
-''').parse()
+''').compile()
     assert_block(test, 1)
     assert_function(test[0], 'foo')
     assert_block(test[0].block, 1)
@@ -670,7 +670,7 @@ foo:
     foo:
         BAH:  bar
         foo:  bar
-''').parse()
+''').compile()
     assert_block(test, 1)
     assert_function(test[0], 'foo')
     assert_block(test[0].block, 1)
@@ -692,7 +692,7 @@ foo:
         BAH:  bar
         # too much indent:
           foo:  bar
-''').parse()
+''').compile()
         assert False
 
 
@@ -702,7 +702,7 @@ foo:
     foo
 BAH:
     BAH
-''').parse()
+''').compile()
     assert_block(test, 2)
     assert_function(test[0], 'foo')
     assert_block(test[0].block, 1)
@@ -720,7 +720,7 @@ BAH: BAH
 bar:
     baz
 baz: 'baz'
-''').parse()
+''').compile()
     assert_block(test, 4)
     assert_function(test[0], 'foo')
     assert_block(test[0].block, 1)
@@ -746,7 +746,7 @@ foo:
     bar:
         baz
       baz
-''').parse()
+''').compile()
         assert test == None
 
 
@@ -754,7 +754,7 @@ def test_for_syntax():
     test = Plywood('''
 for value in [1,2,3]:
     value
-''').parse()
+''').compile()
     assert_block(test, 1)
     assert_function(test[0], 'for')
     assert_parens(test[0].right, 1, 0)

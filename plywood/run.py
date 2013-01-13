@@ -43,17 +43,20 @@ class Plywood(object):
         self.options = options
         self.block_indent = None
         self.prev_indent = []
+        self.parsed = None
 
     def __repr__(self):
         return "{type.__name__}({self.buffer!r})".format(type=type(self), self=self)
 
     def run(self, self_scope={}):
-        parsed = self.parse()
+        self.compile()
         new_scope = PlywoodValue.new_scope(self.options, self.input, self_scope)
-        return parsed.python_value(new_scope)
+        return self.parsed.python_value(new_scope)
 
-    def parse(self):
-        return self.consume_block('')
+    def compile(self):
+        if self.parsed is None:
+            self.parsed = self.consume_block('')
+        return self.parsed
 
     def consume_block(self, indent=None):
         """
@@ -232,9 +235,6 @@ class Plywood(object):
 
         while index < len(line):
             if isinstance(left, PlywoodOperatorGrammar):
-                print("""=============== run.py at line {0} ===============
-left: {1!r}
-""".format(__import__('sys')._getframe().f_lineno - 2, left, ))
                 right, index = self.figure_out_precedence(line, index, self.PRECEDENCE['unary'])
                 left = PlywoodUnaryOperator(left.location, operator=str(left), value=right)
             else:
