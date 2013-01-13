@@ -60,14 +60,13 @@ class PlywoodOperatorGrammar(chomsky.Grammar):
             super(PlywoodOperatorGrammar, self).__init__(parseme)
             self.location = self.buffer.position
 
-    __metaclass__ = chomsky.OperatorGrammarType
-    operators = [
+    grammar = chomsky.Any(
         '==', '!=', '<=', '>=', '<', '>',
         '**=', '//=', '+=', '-=', '/=', '*=', '%=', '.=', '=',
-        'is', 'in', 'not', 'and', 'or',
         '&', '|', '~', '<<', '>>',
         '**',  '//',  '+',  '-',  '/',  '*',  '%',
         '.',  # get_attr
         '@',  # id/name
         ',',  # auto arg
-    ]
+        (chomsky.WordStart() + chomsky.Any('is', 'in', 'not', 'and', 'or') + chomsky.WordEnd()),
+    )

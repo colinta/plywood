@@ -18,13 +18,22 @@ def check(check_type, error):
 
 class PlywoodValue(object):
     GLOBAL = {}
+    STARTUP = []
     RUNTIME = {}
     FUNCTIONS = {}
-    PLUGINS = {}
+    HTML_PLUGINS = {}
 
     @classmethod
     def register(cls, name, value):
         cls.GLOBAL[name] = value
+
+    @classmethod
+    def register_startup(cls, arg=None):
+        def decorator(fn):
+            cls.STARTUP.append(fn)
+        if arg:
+            return decorator(arg)
+        return decorator
 
     @classmethod
     def register_runtime(cls, name=None, **kwargs):
@@ -47,22 +56,26 @@ class PlywoodValue(object):
         return decorator
 
     @classmethod
-    def register_plugin(cls, name=None):
+    def register_html_plugin(cls, name=None):
         def decorator(fn):
             plugin_name = name
             if plugin_name is None:
                 plugin_name = fn.__name__
-            cls.PLUGINS[plugin_name] = fn
+            cls.HTML_PLUGINS[plugin_name] = fn
             return fn
         return decorator
 
     @classmethod
-    def new_scope(cls, options, input, self_scope):
+    def new_scope(cls, runtime, input, self_scope):
         scope = {}
+        scope['__runtime'] = runtime
         scope['__input'] = input
+        options = runtime.options
         add_indent = options.get('indent', '    ')
         scope['self'] = self_scope  # TODO: PlywoodWrapper
         indent = ['']
+        for startup in cls.STARTUP:
+            startup(runtime, scope)
 
         def indent_push(new_indent=add_indent):
             indent.append(new_indent)
@@ -96,7 +109,7 @@ class PlywoodValue(object):
         for key, fn in cls.FUNCTIONS.iteritems():
             value = PlywoodFunction(fn)
             scope[key] = value
-        for key, fn in cls.PLUGINS.iteritems():
+        for key, fn in cls.HTML_PLUGINS.iteritems():
             value = PlywoodPlugin(fn)
             scope[key] = value
         return scope

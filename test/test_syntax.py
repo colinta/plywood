@@ -1,82 +1,22 @@
 from pytest import raises
 from chomsky import ParseException
 from plywood import (
-    Plywood, PlywoodValue,
-    PlywoodVariable, PlywoodString, PlywoodNumber,
-    PlywoodOperator, PlywoodUnaryOperator,
-    PlywoodParens, PlywoodList, PlywoodIndices, PlywoodDict,
-    PlywoodKvp, PlywoodCallOperator, PlywoodBlock,
+    plywood, Plywood, PlywoodVariable,
     )
-
-
-def assert_number(test, value):
-    assert isinstance(test, PlywoodNumber)
-    assert isinstance(test.value, type(value))
-    assert test.value == value
-
-
-def assert_string(test, value):
-    assert isinstance(test, PlywoodString)
-    assert test.value == value
-
-
-def assert_variable(test, name):
-    assert isinstance(test, PlywoodVariable)
-    assert test.name == name
-
-
-def assert_unary(test, op):
-    assert isinstance(test, PlywoodUnaryOperator)
-    assert test.operator == op
-
-
-def assert_operator(test, op):
-    assert isinstance(test, PlywoodOperator)
-    assert test.operator == op
-
-
-def assert_function(test, name=None):
-    assert isinstance(test, PlywoodCallOperator)
-    if name:
-        assert_variable(test.left, name)
-
-
-def assert_kvp(test, key):
-    assert isinstance(test, PlywoodKvp)
-    if key:
-        if not isinstance(key, PlywoodValue):
-            assert_string(test.key, key)
-        else:
-            assert test.key == key
-
-
-def assert_block(test, count=None):
-    assert isinstance(test, PlywoodBlock)
-    if count is not None:
-        assert len(test.lines) == count
-
-
-def assert_list(test, value_count=None):
-    assert isinstance(test, PlywoodList)
-    assert len(test.values) == value_count
-
-
-def assert_slice(test, value_count=None):
-    assert isinstance(test, PlywoodIndices)
-    assert len(test.values) == value_count
-
-
-def assert_parens(test, arg_count=None, kwarg_count=0):
-    assert isinstance(test, PlywoodParens)
-    if arg_count is not None:
-        assert len(test.args) == arg_count
-        assert len(test.kwargs) == kwarg_count
-
-
-def assert_dict(test, count=None):
-    assert isinstance(test, PlywoodDict)
-    if count is not None:
-        assert len(test.values) == count
+from . import (
+    assert_number,
+    assert_string,
+    assert_variable,
+    assert_unary,
+    assert_operator,
+    assert_function,
+    assert_kvp,
+    assert_block,
+    assert_list,
+    assert_slice,
+    assert_parens,
+    assert_dict,
+    )
 
 
 def test_variable():
@@ -356,7 +296,7 @@ def test_list():
     assert_string(test.values[1], 'two')
     assert_variable(test.values[2], 'three')
     assert_operator(test.values[3], '+')
-    assert isinstance(test.values[3].left, PlywoodParens)
+    assert_parens(test.values[3].left, 1)
     assert_variable(test.values[3].left.args[0], 'four')
     assert_unary(test.values[3].right, '-')
     assert_variable(test.values[3].right.value, 'five')
@@ -686,7 +626,7 @@ foo:
 
 def test_multi_mixed_fail():
     with raises(ParseException):
-        Plywood('''
+        plywood('''
 foo:
     foo:
         BAH:  bar

@@ -27,20 +27,22 @@ from values import (
 from exceptions import UnindentException
 
 
-import operators  # registers built-in operators
-import plugins  # registers built-in plugins
+class PlywoodRuntime(object):
+    def __init__(self, options, self_scope):
+        self.options = options
+        self.scope = self_scope
 
 
 def plywood(input, self_scope={}, **options):
-    return Plywood(input, options).run(self_scope)
+    runtime = PlywoodRuntime(options, self_scope)
+    return Plywood(input).run(runtime)
 
 
 class Plywood(object):
-    def __init__(self, input, options={}):
+    def __init__(self, input):
         self.input = unicode(input)
         self.buffer = Buffer(self.input)
         self.output = ''
-        self.options = options
         self.block_indent = None
         self.prev_indent = []
         self.parsed = None
@@ -48,9 +50,10 @@ class Plywood(object):
     def __repr__(self):
         return "{type.__name__}({self.buffer!r})".format(type=type(self), self=self)
 
-    def run(self, self_scope={}):
+    def run(self, runtime):
+        self_scope = runtime.scope
         parsed = self.compile()
-        new_scope = PlywoodValue.new_scope(self.options, self.input, self_scope)
+        new_scope = PlywoodValue.new_scope(runtime, self.input, self_scope)
         return parsed.python_value(new_scope)
 
     def compile(self):
