@@ -7,5 +7,5 @@ def run():
     for arg in sys.argv[1:]:
         if '=' in arg:
             key, value = arg.split('=', 2)
-            scope[key] = value
+            scope[key] = eval(value)
     sys.stdout.write(plywood(sys.stdin.read(), scope, indent='  '))
