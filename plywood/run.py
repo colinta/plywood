@@ -117,8 +117,6 @@ class Plywood(object):
         '.':     (17, LTR),
         '@':     (17, LTR),
         '()':    (16, LTR),
-        'in':    (15, RTL),
-        'is':    (15, RTL),
         '**':    (14, RTL),
         'unary': (13, RTL),
         '&':     (12, LTR),
@@ -137,6 +135,8 @@ class Plywood(object):
         '>=':    (5, LTR),
         '<':     (5, LTR),
         '>':     (5, LTR),
+        'in':    (5, RTL),
+        'is':    (5, RTL),
         'and':   (4, LTR),
         'or':    (3, LTR),
         '**=':   (2, RTL),
@@ -236,6 +236,8 @@ class Plywood(object):
 
         while index < len(line):
             if isinstance(left, PlywoodOperatorGrammar):
+                if precedence_order >= self.operator_precedence('unary')[0]:
+                    return left, index - 1
                 right, index = self.figure_out_precedence(line, index, self.PRECEDENCE['unary'])
                 left = PlywoodUnaryOperator(left.location, operator=str(left), value=right)
             else:

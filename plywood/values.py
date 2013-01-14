@@ -370,16 +370,16 @@ class PlywoodUnaryOperator(PlywoodValue):
     OPERATORS = {}
 
     @classmethod
-    def register(cls, operator):
+    def register(cls, operator, **kwargs):
         def decorator(fn):
-            cls.OPERATORS[operator] = fn
+            cls.OPERATORS[operator] = (fn, kwargs)
             return fn
         return decorator
 
     @classmethod
     def handle(cls, operator, value, scope):
         try:
-            handler = cls.OPERATORS[operator.operator]
+            handler, _ = cls.OPERATORS[operator.operator]
         except KeyError:
             raise Exception('No operator handler for {operator!r}'.format(self=operator))
         return PlywoodWrapper(operator.location, handler(value, scope))

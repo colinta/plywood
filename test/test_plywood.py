@@ -90,10 +90,16 @@ p.important: span.warning.gray: em: 'text'
 
 def test_id_shorthand():
     input = '''
-p@label1: 'text'
-@label2: 'text'
+p@label1.label1: 'text'
+@label2.label2: 'text'
+p.label3@label3: 'text'
+.label4@label4: 'text'
 '''
-    desired = '<p id="label1">text</p>\n<div id="label2">text</div>\n'
+    desired = '''<p id="label1" class="label1">text</p>
+<div id="label2" class="label2">text</div>
+<div id="label3" class="label3">text</div>
+<div id="label4" class="label4">text</div>
+'''
     assert_output(input, desired)
 
 

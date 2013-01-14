@@ -473,6 +473,20 @@ div.classy: 'text'
     assert_string(test[0].block[0], 'text')
 
 
+def test_auto_dic():
+    test = Plywood('''
+@name.classy: 'text'
+''').compile()
+
+    assert_block(test, 1)
+    assert_unary(test[0], '@')
+    assert_operator(test[0].left, '.')
+    assert_variable(test[0].left.left, 'div')
+    assert_variable(test[0].left.right, 'classy')
+    assert_block(test[0].block, 1)
+    assert_string(test[0].block[0], 'text')
+
+
 def test_getitem():
     test = Plywood('''
 div['something'] = 'text'
