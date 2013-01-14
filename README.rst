@@ -175,8 +175,7 @@ for plywood is much easier, and since you can take some part in the parsing and
 runtime process, you can write some pretty hefty plugins!
 
 I'm unapologettically a DIY-er.  I think that sometimes wheels just need
-re-inventing!  Plus, this gave me a chance to play with language grammars, which
-I think are fun.  I'm using Modgrammar_
+re-inventing!
 
 -------
 LICENSE
