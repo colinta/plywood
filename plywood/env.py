@@ -1,7 +1,7 @@
 """
 Stores environment settings, e.g. options, and built-in functions.
 """
-from plywood.values import PlywoodRuntime, PlywoodFunction, PlywoodPlugin
+from plywood.values import PlywoodRuntime, PlywoodFunction, PlywoodHtmlPlugin
 
 
 class PlywoodEnv(object):
@@ -56,7 +56,7 @@ class PlywoodEnv(object):
             value = PlywoodFunction(fn)
             scope[key] = value
         for key, fn in self.HTML_PLUGINS.iteritems():
-            value = PlywoodPlugin(fn)
+            value = PlywoodHtmlPlugin(fn)
             scope[key] = value
         self.scope = scope
 

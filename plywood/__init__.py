@@ -16,7 +16,7 @@ from values import (
     PlywoodDict,
     PlywoodRuntime,
     PlywoodFunction,
-    PlywoodPlugin,
+    PlywoodHtmlPlugin,
     )
 from run import Plywood
 import plywood.operators  # registers built-in operators

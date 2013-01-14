@@ -575,7 +575,7 @@ class PlywoodRuntime(PlywoodCallable):
         return states, PlywoodWrapper(self.location, '')
 
 
-class PlywoodPlugin(PlywoodCallable):
+class PlywoodHtmlPlugin(PlywoodCallable):
     def __init__(self, fn):
         self.fn = fn
         self.id = None

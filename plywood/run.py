@@ -23,7 +23,7 @@ from values import (
     PlywoodSlice,
     PlywoodIndices,
     PlywoodDict,
-    PlywoodPlugin,
+    PlywoodHtmlPlugin,
     PlywoodFunction,
     )
 from plywood.env import PlywoodEnv
