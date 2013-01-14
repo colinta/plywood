@@ -134,7 +134,7 @@ class PlywoodVariable(PlywoodValue):
             return retval
         except KeyError:
             line_no, line = this_line(scope['__runtime'].input, self.location)
-            raise PlywoodKeyError(line_no, line)
+            raise PlywoodKeyError(self.name, line_no, line)
 
     def get_attr(self, scope, right):
         return self.get_value(scope).get_attr(scope, right)
@@ -202,6 +202,9 @@ class PlywoodPythonValue(PlywoodValue):
     # @check(lambda ret: not isinstance(ret, PlywoodValue), 'Must be a python value')
     def python_value(self, scope):
         return self.value
+
+    def get_attr(self, scope, right):
+        return getattr(self.python_value(scope), right.get_name())
 
     def __repr__(self):
         return '{type.__name__}({self.value!r})'.format(type=type(self), self=self)
@@ -645,4 +648,8 @@ def PlywoodWrapper(location, value):
             value = PlywoodWrapper(location, value)
             values.append(PlywoodKvp(key, value))
         return PlywoodDict(location, values)
+    if callable(value):
+        retval = PlywoodFunction(value)
+        retval.location = location
+        return retval
     return PlywoodPythonValue(location, value)

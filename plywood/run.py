@@ -115,10 +115,10 @@ class Plywood(object):
     RTL = 2
     PRECEDENCE = {
         'high':  (100, LTR),
-        '()':    (17, LTR),
-        '[]':    (16, LTR),
-        '.':     (16, LTR),
-        '@':     (16, LTR),
+        '[]':    (17, LTR),
+        '.':     (17, LTR),
+        '@':     (17, LTR),
+        '()':    (16, LTR),
         'in':    (15, RTL),
         'is':    (15, RTL),
         '**':    (14, RTL),
@@ -150,9 +150,9 @@ class Plywood(object):
         '%=':    (2, RTL),
         '.=':    (2, RTL),
         '|=':    (2, RTL),
-        'or=':    (2, RTL),
+        'or=':   (2, RTL),
         '&=':    (2, RTL),
-        'and=':    (2, RTL),
+        'and=':  (2, RTL),
         '=':     (2, RTL),
         ',':     (1, RTL),
         'low':   (0, RTL),
@@ -246,6 +246,8 @@ class Plywood(object):
                 index += 1
 
                 if isinstance(op, PlywoodParens):
+                    if precedence_order >= self.operator_precedence('()')[0]:
+                        return left, index - 1
                     left = PlywoodCallOperator(left, op)
                 elif isinstance(op, PlywoodBlock):
                     # precedence checking for the block - it can only be bound
@@ -313,8 +315,7 @@ class Plywood(object):
         return retval
 
     def consume_variable(self):
-        variable = PlywoodVariableGrammar(self.buffer)
-        return variable
+        return PlywoodVariableGrammar(self.buffer)
 
     def consume_whitespace(self):
         while self.buffer and self.test(self.whitespace):

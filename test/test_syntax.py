@@ -714,3 +714,14 @@ for value in [1,2,3]:
     assert_list(test[0].right.args[0].right, 3)
     assert_block(test[0].block, 1)
     assert_variable(test[0].block[0], 'value')
+
+
+def test_attr_call_precedence():
+    test = Plywood('''
+a.b()
+''').compile()
+    assert_block(test, 1)
+    assert_function(test[0])
+    assert_operator(test[0].left, '.')
+    assert_variable(test[0].left.left, 'a')
+    assert_variable(test[0].left.right, 'b')

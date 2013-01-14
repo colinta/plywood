@@ -74,7 +74,7 @@ some append or prepend content to a block::
     # </ul></nav>
 
     # template.ply
-    extends 'layout.ply':
+    extends 'layout':
         block 'nav':
             super
             li: a href='/another': 'Another'

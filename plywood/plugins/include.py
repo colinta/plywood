@@ -50,4 +50,4 @@ def include(states, scope, arguments, block):
 
 @PlywoodEnv.register_startup()
 def startup(plywood, scope):
-    scope['__path'] = plywood.options.get('indent', os.getcwd())
+    scope['__path'] = plywood.options.get('path', os.getcwd())
