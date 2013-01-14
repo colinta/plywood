@@ -57,6 +57,9 @@ class PlywoodBlock(PlywoodValue):
     def __getitem__(self, key):
         return self.lines.__getitem__(key)
 
+    def __len__(self):
+        return len(self.lines)
+
     def __eq__(self, other):
         return self is other or \
             isinstance(other, list) and other == self.lines

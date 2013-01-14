@@ -309,7 +309,7 @@ class Plywood(object):
                 retval = self.consume(token_consume)
                 break
 
-        if not retval:
+        if retval is None:
             raise Exception(repr(self.buffer))
         self.consume('whitespace')
 
