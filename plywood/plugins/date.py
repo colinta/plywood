@@ -77,11 +77,7 @@ def to_datetime(value):
     if isinstance(value, int) or isinstance(value, float):
         return datetime.datetime.utcfromtimestamp(value)
     if isinstance(value, basestring):
-        try:
-            import dateutil.parser
-        except ImportError:
-            from strange_case import require_package
-            require_package('python-dateutil')
+        import dateutil.parser
         return dateutil.parser.parse(value)
     raise TypeError('Invalid argument {!r} passed to `to_datetime`'.format(value))
 
