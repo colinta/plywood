@@ -7,7 +7,7 @@ supports the ``else`` clause in the same way.  However, it also supports an
 from plywood.env import PlywoodEnv
 from plywood.values import PlywoodOperator, PlywoodVariable, PlywoodParens
 from plywood.runtime import Continue
-from plywood.exceptions import ParseException
+from plywood.exceptions import InvalidArguments
 from _if import ElseState
 from empty import EmptyState
 from _break import BreakException, ContinueException
@@ -20,21 +20,21 @@ class ForLoop(object):
 @PlywoodEnv.register_runtime('for')
 def _for(states, scope, arguments, block):
     if not len(block.lines):
-        raise ParseException('A block is required in `for`')
+        raise InvalidArguments('A block is required in `for`')
     if len(arguments.args) != 1 \
         or len(arguments.kwargs) \
         or not isinstance(arguments.args[0], PlywoodOperator) \
         or arguments.args[0].operator != 'in':
-        raise ParseException('`for` only accepts an "in" operation')
+        raise InvalidArguments('`for` only accepts an "in" operation')
     var = arguments.args[0].left
     if not isinstance(var, PlywoodVariable) and not isinstance(var, PlywoodParens):
-        raise ParseException('`for` expects a variable name or tuple of variable names')
+        raise InvalidArguments('`for` expects a variable name or tuple of variable names')
     if isinstance(var, PlywoodParens):
         if var.kwargs:
-            raise ParseException('keyword arguments are not in appropriate in the list of  `for` variable names')
+            raise InvalidArguments('keyword arguments are not in appropriate in the list of  `for` variable names')
         for arg in var.arguments:
             if not isinstance(arg, PlywoodVariable):
-                raise ParseException('`for` expects a variable name or tuple of variable names')
+                raise InvalidArguments('`for` expects a variable name or tuple of variable names')
     iterator = arguments.args[0].right.python_value(scope)
 
     retval = None

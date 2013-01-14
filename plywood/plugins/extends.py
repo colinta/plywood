@@ -84,7 +84,7 @@ some append or prepend content to a block::
     # </ul></nav>
 '''
 from plywood.env import PlywoodEnv
-from plywood.exceptions import ParseException
+from plywood.exceptions import InvalidArguments
 from plywood.values import PlywoodBlock
 from .include import include
 
@@ -92,9 +92,9 @@ from .include import include
 @PlywoodEnv.register_runtime()
 def extends(states, scope, arguments, block):
     if not len(arguments.args):
-        raise ParseException('A layout name is required in `extends`')
+        raise InvalidArguments('A layout name is required in `extends`')
     if len(arguments.args) != 1:
-        raise ParseException('`extends` only accepts one argument')
+        raise InvalidArguments('`extends` only accepts one argument')
 
     old_yield = scope.get('__yield')
     yield_content = block.get_value(scope)  # executes the body, to define blocks
@@ -113,9 +113,9 @@ def extends(states, scope, arguments, block):
 @PlywoodEnv.register_runtime('block')
 def define_block(states, scope, arguments, block):
     if not len(arguments.args):
-        raise ParseException('A block name is required in `block`')
+        raise InvalidArguments('A block name is required in `block`')
     if len(arguments.args) != 1 or len(arguments.kwargs):
-        raise ParseException('`block` only accepts one argument')
+        raise InvalidArguments('`block` only accepts one argument')
     block_name = arguments.args[0].python_value(scope)
     if block_name not in scope['__blocks']:
         scope['__blocks'][block_name] = block
@@ -125,9 +125,9 @@ def define_block(states, scope, arguments, block):
 @PlywoodEnv.register_runtime()
 def get_block(states, scope, arguments, block):
     if not len(arguments.args):
-        raise ParseException('A block name is required in `get_block`')
+        raise InvalidArguments('A block name is required in `get_block`')
     if len(arguments.args) != 1 or len(arguments.kwargs):
-        raise ParseException('`get_block` only accepts one argument')
+        raise InvalidArguments('`get_block` only accepts one argument')
     # if a block is defined, it will be stored as the default
     define_block(states, scope, arguments, block)
     block_name = arguments.args[0].python_value(scope)
@@ -137,7 +137,7 @@ def get_block(states, scope, arguments, block):
 @PlywoodEnv.register_runtime('yield')
 def _yield(states, scope, arguments, block):
     if len(arguments.args) or len(arguments.kwargs) or len(block.lines):
-        raise ParseException('`yield` does not accept any argumentsor block')
+        raise InvalidArguments('`yield` does not accept any argumentsor block')
     yield_content = scope.get('__yield', '')
     return states, yield_content
 

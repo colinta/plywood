@@ -4,16 +4,17 @@ those will be available in the scope of that template.
 '''
 import os
 
-from plywood import Plywood, ParseException
+from plywood import Plywood
+from plywood.exceptions import InvalidArguments
 from plywood.env import PlywoodEnv
 
 
 @PlywoodEnv.register_runtime()
 def include(states, scope, arguments, block):
     if len(arguments.args) != 1:
-        raise ParseException('`include` only accepts one argument')
+        raise InvalidArguments('`include` only accepts one argument')
     if len(block.lines):
-        raise ParseException('`include` does not accept a block')
+        raise InvalidArguments('`include` does not accept a block')
     restore_scope = {}
     delete_scope = []
     self_scope = scope['self']
