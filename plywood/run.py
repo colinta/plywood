@@ -291,6 +291,7 @@ class Plywood(object):
  # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
     TOKEN_TESTS = (
+        ('from', 'from'),
         ('number', 'number'),
         ('operator', 'operator'),
         ('variable', 'variable'),
@@ -396,11 +397,25 @@ class Plywood(object):
 
         return PlywoodDict(location, tokens)
 
+    def consume_from(self):
+        location = self.buffer.position
+        from_var = self.consume('variable').plywood_value()
+        self.consume('whitespace')
+
+        module_name = self.consume('variable').plywood_value()
+        self.consume('singleline_whitespace')
+        Literal('import')(self.buffer)
+        imports = self.convert_to_args(self.consume_until('eol', inline=True))
+
+        parens = PlywoodParens(location, [module_name, imports])
+        return PlywoodCallOperator(from_var, parens)
+
  # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
     TESTERS = {
         'eof': StringEnd().test,
         'eol': (Literal('\n') | '\r\n' | '\r' | '#' | StringEnd).test,
         'comment': Literal('#').test,
+        'from': Literal('from').test,
 
         'variable': Char('_' + string.ascii_letters).test,
         'number': (Char('0123456789') | ('-' + Char('0123456789'))).test,

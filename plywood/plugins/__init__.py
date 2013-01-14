@@ -9,3 +9,4 @@ from .include import *
 from .extends import *
 from .entitize import *
 from .constants import *
+from .ieif import *
