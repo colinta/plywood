@@ -66,8 +66,8 @@ class Plywood(object):
         and at the start of parsing, when the indent should be ''.
 
         If ``indent`` is None, we are at a ':'.  The colon is consumed, then
-        single_whitespace, and then if we are at the end of the line, a block
-        is consumed.  Otherwise we are at a token, and a single line is
+        singleline_whitespace, and then if we are at the end of the line, a
+        block is consumed.  Otherwise we are at a token, and a single line is
         consumed.
         """
         self.prev_indent.append(self.block_indent)
@@ -95,7 +95,7 @@ class Plywood(object):
             if self.test('blankline'):
                 self.consume('blankline')
             else:
-                self.whitespace = 'single_whitespace'
+                self.whitespace = 'singleline_whitespace'
                 try:
                     line = self.consume_until('eol')
                 except UnindentException:
@@ -184,8 +184,8 @@ class Plywood(object):
                     raise UnindentException()
 
                 indent = self.block_indent.consume(self.buffer)
-                if self.test('single_whitespace'):
-                    extra = self.consume('single_whitespace')
+                if self.test('singleline_whitespace'):
+                    extra = self.consume('singleline_whitespace')
                     raise ParseException('Unexpected: too much indent. '
                         'found {extra!r} ({len_extra}) '
                         'instead of {indent!r} ({len_indent})'.format(extra=indent + extra, len_extra=len(indent) + len(extra),
@@ -430,7 +430,7 @@ class Plywood(object):
         'dict_close': Literal('}'),
         'block_open': Literal(':'),
 
-        'single_whitespace': Chars(' \t'),
+        'singleline_whitespace': Chars(' \t'),
         'multiline_whitespace': Chars(' \t\r\n'),
         'optional_whitespace': Whitespace(' \t'),
     }
@@ -440,7 +440,7 @@ class Plywood(object):
     })
 
     MATCHERS.update({
-        'blankspace': Optional(MATCHERS['single_whitespace']) + Optional(MATCHERS['comment']),
+        'blankspace': Optional(MATCHERS['singleline_whitespace']) + Optional(MATCHERS['comment']),
     })
 
     MATCHERS.update({
