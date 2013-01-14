@@ -34,7 +34,7 @@ def plywood(input, self_scope={}, **options):
 
 class Plywood(object):
     def __init__(self, input):
-        self.input = unicode(input)
+        self.input = unicode(input, 'utf-8')
         self.buffer = Buffer(self.input)
         self.output = ''
         self.block_indent = None

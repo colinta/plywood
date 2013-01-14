@@ -658,7 +658,7 @@ def PlywoodWrapper(location, value):
         and len(value[0]) > 0 \
         and isinstance(value[0][0], Runtime):
         return [value[0], PlywoodWrapper(location, value[1])]
-    if isinstance(value, str) or isinstance(value, unicode):
+    if isinstance(value, basestring):
         return PlywoodString(location, value)
     if isinstance(value, int) or isinstance(value, long) or isinstance(value, float):
         return PlywoodNumber(location, value)
