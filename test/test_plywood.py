@@ -71,6 +71,15 @@ p: span: em: 'text'
     assert_output(input, desired)
 
 
+def test_lotso_inlines_block():
+    input = '''
+p: span:
+    em: 'text'
+'''
+    desired = "<p><span>\n    <em>text</em>\n</span></p>\n"
+    assert_output(input, desired)
+
+
 def test_class_shorthand():
     input = '''
 p.important: span.warning.gray: em: 'text'

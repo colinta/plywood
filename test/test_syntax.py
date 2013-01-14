@@ -679,6 +679,17 @@ baz: 'baz'
     assert_string(test[3].block[0], 'baz')
 
 
+def test_mixed_block_indented_last():
+    test = Plywood('''
+foo: bar:
+        baz
+''').compile()
+    assert_block(test, 1)
+    assert_function(test[0], 'foo')
+    assert_block(test[0].block, 1)
+    assert_block(test[0].block[0].block, 1)
+
+
 def test_mixed_block_fail():
     with raises(ParseException):
         test = Plywood('''

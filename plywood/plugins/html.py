@@ -1,10 +1,10 @@
-from plywood.values import PlywoodValue
+from plywood.env import PlywoodEnv
 from plywood.util import entitize
 from plywood.exceptions import InvalidArguments
 
 
 def register_html_plugin(tag_name, is_block=False, self_closing=False):
-    @PlywoodValue.register_html_plugin(tag_name)
+    @PlywoodEnv.register_html_plugin(tag_name)
     def plugin(scope, arguments, block, classes, id):
         args = arguments.args
         kwargs = arguments.kwargs

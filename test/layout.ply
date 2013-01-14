@@ -1,0 +1,6 @@
+nav: ul:
+  block 'nav':
+    links = [{'href':'/link-one','title':'Link One'}]
+    print links
+    for link in links:
+      li: a href=link.href: link.title

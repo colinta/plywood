@@ -68,7 +68,7 @@ If any other string is passed to ``date`` or ``timestamp``, it will be parsed
 using ``python-dateutil``.  Since this is less commond, it is imported lazily.
 """
 import datetime
-from plywood.values import PlywoodValue
+from plywood.env import PlywoodEnv
 
 
 def to_datetime(value):
@@ -86,7 +86,7 @@ def to_datetime(value):
     raise TypeError('Invalid argument {!r} passed to `to_datetime`'.format(value))
 
 
-@PlywoodValue.register_fn()
+@PlywoodEnv.register_fn()
 def date(value, format='%d %b %Y'):
     """
     Default format: 01 May 2012
@@ -96,12 +96,12 @@ def date(value, format='%d %b %Y'):
     return to_datetime(value).strftime(format)
 
 
-@PlywoodValue.register_fn()
+@PlywoodEnv.register_fn()
 def now(format=None):
     return datetime.datetime.now()
 
 
-@PlywoodValue.register_fn()
+@PlywoodEnv.register_fn()
 def timestamp(value):
     value = datetime.datetime.utcnow()
     return '%sZ' % value.isoformat()

@@ -1,19 +1,19 @@
 '''
-Implements the ``for`` loop clause.  The syntax is the same as python, and it
-supports the ``else`` clause in the same way.  However, it also supports an
-``empty`` clause, which is only executed if the iterator was empty.  The
-``empty`` clause must appear before the ``else`` clause.
+Includes content from another template.  If you assign any keyword arguments,
+those will be available in the scope of that template.
 '''
 import os
 
-from plywood.values import PlywoodValue
 from plywood import Plywood, ParseException
+from plywood.env import PlywoodEnv
 
 
-@PlywoodValue.register_runtime('include')
+@PlywoodEnv.register_runtime()
 def include(states, scope, arguments, block):
     if len(arguments.args) != 1:
         raise ParseException('`include` only accepts one argument')
+    if len(block.lines):
+        raise ParseException('`include` does not accept a block')
     restore_scope = {}
     delete_scope = []
     self_scope = scope['self']
@@ -33,7 +33,11 @@ def include(states, scope, arguments, block):
     template_path = os.path.join(scope['__path'], template_name) + '.ply'
     retval = ''
     with open(template_path) as f:
-        retval = Plywood(f.read()).run(scope['__runtime'])
+        input = f.read()
+        old_input = scope['__runtime'].input
+        scope['__runtime'].input = input
+        retval = Plywood(input).run(scope['__runtime'])
+        scope['__runtime'].input = old_input
 
     if len(arguments.kwargs):
         for key, value in restore_scope.iteritems():
@@ -43,6 +47,6 @@ def include(states, scope, arguments, block):
     return states, retval
 
 
-@PlywoodValue.register_startup()
+@PlywoodEnv.register_startup()
 def startup(plywood, scope):
     scope['__path'] = plywood.options.get('indent', os.getcwd())

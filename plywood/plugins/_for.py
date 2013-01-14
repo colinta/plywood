@@ -4,9 +4,10 @@ supports the ``else`` clause in the same way.  However, it also supports an
 ``empty`` clause, which is only executed if the iterator was empty.  The
 ``empty`` clause must appear before the ``else`` clause.
 '''
-from plywood.values import PlywoodValue, PlywoodOperator, PlywoodVariable, PlywoodParens
+from plywood.env import PlywoodEnv
+from plywood.values import PlywoodOperator, PlywoodVariable, PlywoodParens
 from plywood.runtime import Continue
-from plywood import ParseException
+from plywood.exceptions import ParseException
 from _if import ElseState
 from empty import EmptyState
 from _break import BreakException, ContinueException
@@ -16,8 +17,10 @@ class ForLoop(object):
     pass
 
 
-@PlywoodValue.register_runtime('for')
+@PlywoodEnv.register_runtime('for')
 def _for(states, scope, arguments, block):
+    if not len(block.lines):
+        raise ParseException('A block is required in `for`')
     if len(arguments.args) != 1 \
         or len(arguments.kwargs) \
         or not isinstance(arguments.args[0], PlywoodOperator) \

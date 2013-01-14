@@ -1,4 +1,4 @@
-from plywood.values import PlywoodValue
+from plywood.env import PlywoodEnv
 
 
 DOCTYPES = {
@@ -18,6 +18,6 @@ DOCTYPES = {
 }
 
 
-@PlywoodValue.register_fn()
+@PlywoodEnv.register_fn()
 def doctype(doctype='5'):
     return DOCTYPES.get(str(doctype), doctype)

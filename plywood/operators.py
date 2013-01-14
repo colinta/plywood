@@ -1,13 +1,18 @@
 from __future__ import division
 from plywood import (
     PlywoodOperator, PlywoodUnaryOperator, PlywoodVariable,
-    PlywoodSlice, PlywoodIndices,
     )
+from plywood.runtime import Skip
 
 
 @PlywoodOperator.register('+')
 def plus(left, right, scope):
     return left.python_value(scope) + right.python_value(scope)
+
+
+@PlywoodOperator.register('-')
+def minus(left, right, scope):
+    return left.python_value(scope) - right.python_value(scope)
 
 
 @PlywoodOperator.register('*')
@@ -145,65 +150,80 @@ def not_(value, scope):
     return not value.python_value(scope)
 
 
-@PlywoodOperator.register('=')
+@PlywoodOperator.register('=', state=Skip())
 def assign(left, right, scope):
-    left = left.get_value(scope)
-    scope[left.get_name()] = right
+    scope[left.get_name()] = right.get_value(scope)
     return right
 
 
-@PlywoodOperator.register('+=')
+@PlywoodOperator.register('+=', state=Skip())
 def plus_assign(left, right, scope):
     value = PlywoodOperator.handle('+', left, right, scope)
-    PlywoodOperator.handle('=', left, value, scope)
-    return right
+    return PlywoodOperator.handle('=', left, value, scope)
 
 
-@PlywoodOperator.register('-=')
+@PlywoodOperator.register('-=', state=Skip())
 def minus_assign(left, right, scope):
     value = PlywoodOperator.handle('-', left, right, scope)
-    PlywoodOperator.handle('=', left, value, scope)
-    return right
+    return PlywoodOperator.handle('=', left, value, scope)
 
 
-@PlywoodOperator.register('*=')
+@PlywoodOperator.register('*=', state=Skip())
 def times_assign(left, right, scope):
     value = PlywoodOperator.handle('*', left, right, scope)
-    PlywoodOperator.handle('=', left, value, scope)
-    return right
+    return PlywoodOperator.handle('=', left, value, scope)
 
 
-@PlywoodOperator.register('**=')
+@PlywoodOperator.register('**=', state=Skip())
 def power_assign(left, right, scope):
     value = PlywoodOperator.handle('**', left, right, scope)
-    PlywoodOperator.handle('=', left, value, scope)
-    return right
+    return PlywoodOperator.handle('=', left, value, scope)
 
 
-@PlywoodOperator.register('/=')
+@PlywoodOperator.register('/=', state=Skip())
 def divide_assign(left, right, scope):
     value = PlywoodOperator.handle('/', left, right, scope)
-    PlywoodOperator.handle('=', left, value, scope)
-    return right
+    return PlywoodOperator.handle('=', left, value, scope)
 
 
-@PlywoodOperator.register('//=')
+@PlywoodOperator.register('//=', state=Skip())
 def int_divide_assign(left, right, scope):
     value = PlywoodOperator.handle('//', left, right, scope)
-    PlywoodOperator.handle('=', left, value, scope)
-    return right
+    return PlywoodOperator.handle('=', left, value, scope)
 
 
-@PlywoodOperator.register('%=')
+@PlywoodOperator.register('%=', state=Skip())
 def modulo_assign(left, right, scope):
     value = PlywoodOperator.handle('%', left, right, scope)
-    PlywoodOperator.handle('=', left, value, scope)
-    return right
+    return PlywoodOperator.handle('=', left, value, scope)
 
 
-@PlywoodOperator.register('.=')
+@PlywoodOperator.register('.=', state=Skip())
 def call_assign(left, right, scope):
     left = left.get_value(scope)
     left = scope[left.get_name()].get_attr(right)
-    PlywoodOperator.handle('=', left, right, scope)
-    return right
+    return PlywoodOperator.handle('=', left, right, scope)
+
+
+@PlywoodOperator.register('|=', state=Skip())
+def bitwise_or_assign(left, right, scope):
+    value = PlywoodOperator.handle('|', left, right, scope)
+    return PlywoodOperator.handle('=', left, value, scope)
+
+
+@PlywoodOperator.register('&=', state=Skip())
+def bitwise_and_assign(left, right, scope):
+    value = PlywoodOperator.handle('&', left, right, scope)
+    return PlywoodOperator.handle('=', left, value, scope)
+
+
+@PlywoodOperator.register('or=', state=Skip())
+def boolean_or_assign(left, right, scope):
+    value = PlywoodOperator.handle('or', left, right, scope)
+    return PlywoodOperator.handle('=', left, value, scope)
+
+
+@PlywoodOperator.register('and=', state=Skip())
+def boolean_and_assign(left, right, scope):
+    value = PlywoodOperator.handle('and', left, right, scope)
+    return PlywoodOperator.handle('=', left, value, scope)

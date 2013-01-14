@@ -23,18 +23,15 @@ from values import (
     PlywoodSlice,
     PlywoodIndices,
     PlywoodDict,
+    PlywoodPlugin,
+    PlywoodFunction,
     )
+from plywood.env import PlywoodEnv
 from exceptions import UnindentException
 
 
-class PlywoodRuntime(object):
-    def __init__(self, options, self_scope):
-        self.options = options
-        self.scope = self_scope
-
-
 def plywood(input, self_scope={}, **options):
-    runtime = PlywoodRuntime(options, self_scope)
+    runtime = PlywoodEnv(input, options, self_scope)
     return Plywood(input).run(runtime)
 
 
@@ -51,10 +48,8 @@ class Plywood(object):
         return "{type.__name__}({self.buffer!r})".format(type=type(self), self=self)
 
     def run(self, runtime):
-        self_scope = runtime.scope
         parsed = self.compile()
-        new_scope = PlywoodValue.new_scope(runtime, self.input, self_scope)
-        return parsed.python_value(new_scope)
+        return parsed.python_value(runtime.scope)
 
     def compile(self):
         if self.parsed is None:
@@ -153,6 +148,11 @@ class Plywood(object):
         '/=':    (2, RTL),
         '*=':    (2, RTL),
         '%=':    (2, RTL),
+        '.=':    (2, RTL),
+        '|=':    (2, RTL),
+        'or=':    (2, RTL),
+        '&=':    (2, RTL),
+        'and=':    (2, RTL),
         '=':     (2, RTL),
         ',':     (1, RTL),
         'low':   (0, RTL),

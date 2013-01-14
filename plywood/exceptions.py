@@ -1,3 +1,6 @@
+from chomsky import ParseException
+
+
 class PlywoodKeyError(Exception):
     pass
 
@@ -23,7 +26,7 @@ class ContinueException(Exception):
 def this_line(input, location):
     newline_start = location
     newline_end = location
-    while newline_start:
+    while newline_start >= 0:
         newline_start -= 1
         if input[newline_start] == "\n":
             newline_start += 1

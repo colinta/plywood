@@ -29,6 +29,12 @@ class Continue(Runtime):
     """
 
 
+class Skip(Runtime):
+    """
+    Like Continue, but does not append the current line's output
+    """
+
+
 class SuppressNewline(Runtime):
     """
     Suppresses newlines for the entire block

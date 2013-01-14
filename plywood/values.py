@@ -1,5 +1,5 @@
 from chomsky import Whitespace, ParseException
-from runtime import Runtime, Continue, SuppressNewline, SuppressOneNewline
+from runtime import Runtime, Continue, Skip, SuppressNewline, SuppressOneNewline
 from exceptions import PlywoodKeyError, this_line, BreakException, ContinueException
 from functools import wraps
 
@@ -17,107 +17,10 @@ def check(check_type, error):
 
 
 class PlywoodValue(object):
-    GLOBAL = {}
-    STARTUP = []
-    RUNTIME = {}
-    FUNCTIONS = {}
-    HTML_PLUGINS = {}
-
-    @classmethod
-    def register(cls, name, value):
-        cls.GLOBAL[name] = value
-
-    @classmethod
-    def register_startup(cls, arg=None):
-        def decorator(fn):
-            cls.STARTUP.append(fn)
-        if arg:
-            return decorator(arg)
-        return decorator
-
-    @classmethod
-    def register_runtime(cls, name=None, **kwargs):
-        def decorator(fn):
-            plugin_name = name
-            if plugin_name is None:
-                plugin_name = fn.__name__
-            cls.RUNTIME[plugin_name] = (fn, kwargs)
-            return fn
-        return decorator
-
-    @classmethod
-    def register_fn(cls, name=None):
-        def decorator(fn):
-            plugin_name = name
-            if plugin_name is None:
-                plugin_name = fn.__name__
-            cls.FUNCTIONS[plugin_name] = fn
-            return fn
-        return decorator
-
-    @classmethod
-    def register_html_plugin(cls, name=None):
-        def decorator(fn):
-            plugin_name = name
-            if plugin_name is None:
-                plugin_name = fn.__name__
-            cls.HTML_PLUGINS[plugin_name] = fn
-            return fn
-        return decorator
-
-    @classmethod
-    def new_scope(cls, runtime, input, self_scope):
-        scope = {}
-        scope['__runtime'] = runtime
-        scope['__input'] = input
-        options = runtime.options
-        add_indent = options.get('indent', '    ')
-        scope['self'] = self_scope  # TODO: PlywoodWrapper
-        indent = ['']
-        for startup in cls.STARTUP:
-            startup(runtime, scope)
-
-        def indent_push(new_indent=add_indent):
-            indent.append(new_indent)
-            return indent
-
-        def indent_pop():
-            return indent.pop()
-
-        def indent_apply(insides):
-            if not insides:
-                return insides
-            indent_push()
-            current = indent[-1]
-            retval = None
-            for line in insides.splitlines():
-                if retval is None:
-                    retval = ''
-                else:
-                    retval += "\n"
-                if line:
-                    retval += current + line
-            indent_pop()
-            return retval
-
-        scope['__indent'] = indent_apply
-        scope.update(cls.GLOBAL)
-        for key, runtime in cls.RUNTIME.iteritems():
-            fn, kwargs = runtime
-            value = PlywoodRuntime(fn, **kwargs)
-            scope[key] = value
-        for key, fn in cls.FUNCTIONS.iteritems():
-            value = PlywoodFunction(fn)
-            scope[key] = value
-        for key, fn in cls.HTML_PLUGINS.iteritems():
-            value = PlywoodPlugin(fn)
-            scope[key] = value
-        return scope
-
     def __init__(self, location):
         self.location = location
 
-    @check(lambda run: len(run) == 2 and isinstance(run[1], PlywoodValue), 'call values are wrong')
+    # @check(lambda run: len(run) == 2 and isinstance(run[1], PlywoodValue), 'call values are wrong')
     def call(self, states, scope, arguments, block):
         return [Continue()], self
 
@@ -127,14 +30,14 @@ class PlywoodValue(object):
     def plywood_value(self):
         return self
 
-    @check(lambda ret: not isinstance(ret, PlywoodValue), 'Must be a python value')
+    # @check(lambda ret: not isinstance(ret, PlywoodValue), 'Must be a python value')
     def python_value(self, scope):
         raise NotImplemented
 
     def get_value(self, scope):
         return self
 
-    @check(lambda run: len(run) == 2 and isinstance(run[1], PlywoodValue), 'run values are wrong')
+    # @check(lambda run: len(run) == 2 and isinstance(run[1], PlywoodValue), 'run values are wrong')
     def run(self, states, scope):
         if Continue() in states:
             return [Continue()], self.get_value(scope)
@@ -164,25 +67,30 @@ class PlywoodBlock(PlywoodValue):
     def __str__(self):
         return '\n'.join(str(v) for v in self.lines)
 
-    @check(lambda ret: not isinstance(ret, PlywoodValue), 'Must be a python value')
+    # @check(lambda ret: not isinstance(ret, PlywoodValue), 'Must be a python value')
     def python_value(self, scope):
         states = [Continue()]
         return self.run(states, scope)[1].python_value(scope)
 
-    @check(lambda ret: isinstance(ret, PlywoodValue), 'Must be a PlywoodValue')
+    # @check(lambda ret: isinstance(ret, PlywoodValue), 'Must be a PlywoodValue')
     def get_value(self, scope):
         states = [Continue()]
         return self.run(states, scope)[1]
 
-    @check(lambda run: len(run) == 2 and isinstance(run[1], PlywoodValue), 'run values are wrong')
+    # @check(lambda run: len(run) == 2 and isinstance(run[1], PlywoodValue), 'run values are wrong')
     def run(self, states, scope):
         retval = ''
         try:
             for cmd in self.lines:
                 states, cmd_ret = cmd.run(states, scope)
-                cmd_ret = str(cmd_ret.python_value(scope))
-                if len(cmd_ret):
-                    retval += cmd_ret
+                if Skip() in states:
+                    states.remove(Skip())
+                    states.append(Continue())
+                    cmd_ret = None
+                else:
+                    cmd_ret = cmd_ret.python_value(scope)
+                if cmd_ret is not None:
+                    retval += str(cmd_ret)
                     suppress_newline = SuppressNewline() in states or SuppressOneNewline() in states
                     if not self.inline and not suppress_newline:
                         retval += "\n"
@@ -211,11 +119,11 @@ class PlywoodVariable(PlywoodValue):
     def set_id(self, scope, var):
         return self.get_value(scope).set_id(scope, var)
 
-    @check(lambda ret: not isinstance(ret, PlywoodValue), 'Must be a python value')
+    # @check(lambda ret: not isinstance(ret, PlywoodValue), 'Must be a python value')
     def python_value(self, scope):
         return self.get_value(scope).python_value(scope)
 
-    @check(lambda ret: isinstance(ret, PlywoodValue), 'Must be a PlywoodValue')
+    # @check(lambda ret: isinstance(ret, PlywoodValue), 'Must be a PlywoodValue')
     def get_value(self, scope):
         try:
             retval = scope[self.name]
@@ -225,7 +133,7 @@ class PlywoodVariable(PlywoodValue):
             retval.location = self.location
             return retval
         except KeyError:
-            line_no, line = this_line(scope['__input'], self.location)
+            line_no, line = this_line(scope['__runtime'].input, self.location)
             raise PlywoodKeyError(line_no, line)
 
     def get_attr(self, scope, right):
@@ -268,7 +176,7 @@ class PlywoodString(PlywoodValue):
     def get_name(self):
         return self.value
 
-    @check(lambda ret: not isinstance(ret, PlywoodValue), 'Must be a python value')
+    # @check(lambda ret: not isinstance(ret, PlywoodValue), 'Must be a python value')
     def python_value(self, scope):
         return self.value
 
@@ -291,7 +199,7 @@ class PlywoodPythonValue(PlywoodValue):
         self.value = value
         super(PlywoodPythonValue, self).__init__(location)
 
-    @check(lambda ret: not isinstance(ret, PlywoodValue), 'Must be a python value')
+    # @check(lambda ret: not isinstance(ret, PlywoodValue), 'Must be a python value')
     def python_value(self, scope):
         return self.value
 
@@ -307,7 +215,7 @@ class PlywoodNumber(PlywoodValue):
         self.value = value
         super(PlywoodNumber, self).__init__(location)
 
-    @check(lambda ret: not isinstance(ret, PlywoodValue), 'Must be a python value')
+    # @check(lambda ret: not isinstance(ret, PlywoodValue), 'Must be a python value')
     def python_value(self, scope):
         return self.value
 
@@ -323,18 +231,18 @@ class PlywoodOperator(PlywoodValue):
     OPERATORS = {}
 
     @classmethod
-    def register(cls, operator):
+    def register(cls, operator, **kwargs):
         def decorator(fn):
-            cls.OPERATORS[operator] = fn
+            cls.OPERATORS[operator] = (fn, kwargs)
             return fn
         return decorator
 
     @classmethod
     def handle(cls, operator, left, right, scope):
         try:
-            handler = cls.OPERATORS[operator]
+            handler, _ = cls.OPERATORS[operator]
         except KeyError:
-            raise Exception('No operator handler for {operator!r}'.format(self=operator))
+            raise Exception('No operator handler for {operator!r}'.format(operator=operator))
         return PlywoodWrapper(left.location, handler(left, right, scope))
 
     def __init__(self, operator, left, right):
@@ -343,11 +251,24 @@ class PlywoodOperator(PlywoodValue):
         self.right = right
         super(PlywoodOperator, self).__init__(left.location)
 
-    @check(lambda ret: isinstance(ret, PlywoodValue), 'Must be a PlywoodValue')
+    # @check(lambda run: len(run) == 2 and isinstance(run[1], PlywoodValue), 'run values are wrong')
+    def run(self, states, scope):
+        try:
+            _, kwargs = self.OPERATORS[self.operator]
+        except KeyError:
+            kwargs = {}
+
+        if Continue() in states:
+            states = [kwargs.get('state') or Continue()]
+            return states, self.get_value(scope)
+        else:
+            raise Exception(''.join(states))
+
+    # @check(lambda ret: isinstance(ret, PlywoodValue), 'Must be a PlywoodValue')
     def get_value(self, scope):
         return self.handle(self.operator, self.left, self.right, scope)
 
-    @check(lambda ret: not isinstance(ret, PlywoodValue), 'Must be a python value')
+    # @check(lambda ret: not isinstance(ret, PlywoodValue), 'Must be a python value')
     def python_value(self, scope):
         return self.get_value(scope).python_value(scope)
 
@@ -377,7 +298,7 @@ class PlywoodCallOperator(PlywoodOperator):
             block = PlywoodBlock(-1, [])
         self.block = block
 
-    @check(lambda run: len(run) == 2 and isinstance(run[1], PlywoodValue), 'run values are wrong')
+    # @check(lambda run: len(run) == 2 and isinstance(run[1], PlywoodValue), 'run values are wrong')
     def run(self, states, scope):
         if Continue() in states:
             retval = self.left.get_value(scope).call(states, scope, self.right, self.block)
@@ -385,7 +306,7 @@ class PlywoodCallOperator(PlywoodOperator):
         else:
             raise Exception(''.join(states))
 
-    @check(lambda ret: isinstance(ret, PlywoodValue), 'Must be a PlywoodValue')
+    # @check(lambda ret: isinstance(ret, PlywoodValue), 'Must be a PlywoodValue')
     def get_value(self, scope):
         return self.run([Continue()], scope)[1]
 
@@ -431,7 +352,7 @@ class PlywoodUnaryOperator(PlywoodValue):
         self.value = value
         super(PlywoodUnaryOperator, self).__init__(location)
 
-    @check(lambda ret: isinstance(ret, PlywoodValue), 'Must be a PlywoodValue')
+    # @check(lambda ret: isinstance(ret, PlywoodValue), 'Must be a PlywoodValue')
     def get_value(self, scope):
         return self.handle(self, self.value, scope)
 
@@ -458,11 +379,11 @@ class PlywoodParens(PlywoodValue):
         self.is_set = is_set
         super(PlywoodParens, self).__init__(location)
 
-    @check(lambda ret: isinstance(ret, PlywoodValue), 'Must be a PlywoodValue')
+    # @check(lambda ret: isinstance(ret, PlywoodValue), 'Must be a PlywoodValue')
     def get_value(self, scope):
         return self.args[0].get_value(scope)
 
-    @check(lambda ret: not isinstance(ret, PlywoodValue), 'Must be a python value')
+    # @check(lambda ret: not isinstance(ret, PlywoodValue), 'Must be a python value')
     def python_value(self, scope):
         return self.args[0].python_value(scope)
 
@@ -516,7 +437,7 @@ class PlywoodList(PlywoodValue):
         self.force_list = force_list
         super(PlywoodList, self).__init__(location)
 
-    @check(lambda ret: not isinstance(ret, PlywoodValue), 'Must be a python value')
+    # @check(lambda ret: not isinstance(ret, PlywoodValue), 'Must be a python value')
     def python_value(self, scope):
         return self.values
 
@@ -564,7 +485,7 @@ class PlywoodDict(PlywoodValue):
         self.values = values
         super(PlywoodDict, self).__init__(location)
 
-    @check(lambda ret: not isinstance(ret, PlywoodValue), 'Must be a python value')
+    # @check(lambda ret: not isinstance(ret, PlywoodValue), 'Must be a python value')
     def python_value(self, scope):
         return dict((kvp.key.python_value(scope), kvp.value.python_value(scope)) for kvp in self.values)
 
@@ -602,7 +523,7 @@ class PlywoodCallable(PlywoodValue):
         self.fn = fn
         self.accepts_block = block
 
-    @check(lambda run: len(run) == 2 and isinstance(run[1], PlywoodValue), 'run values are wrong')
+    # @check(lambda run: len(run) == 2 and isinstance(run[1], PlywoodValue), 'run values are wrong')
     def run(self, states, scope):
         if not hasattr(self, 'location'):
             raise Exception(repr(self) + ' has no location')
@@ -613,11 +534,11 @@ class PlywoodCallable(PlywoodValue):
         else:
             return None
 
-    @check(lambda ret: not isinstance(ret, PlywoodValue), 'Must be a python value')
+    # @check(lambda ret: not isinstance(ret, PlywoodValue), 'Must be a python value')
     def python_value(self, scope):
         return self.get_value(scope).python_value(scope)
 
-    @check(lambda ret: isinstance(ret, PlywoodValue), 'Must be a PlywoodValue')
+    # @check(lambda ret: isinstance(ret, PlywoodValue), 'Must be a PlywoodValue')
     def get_value(self, scope):
         return self.run([Continue()], scope)[1]
 
@@ -643,7 +564,7 @@ class PlywoodRuntime(PlywoodCallable):
         self.accepts_states = accepted_states
         self.suppress_newline = suppress_newline
 
-    @check(lambda run: len(run) == 2 and isinstance(run[1], PlywoodValue), 'call values are wrong')
+    # @check(lambda run: len(run) == 2 and isinstance(run[1], PlywoodValue), 'call values are wrong')
     def call(self, states, scope, arguments, block):
         if any(state in states for state in self.accepts_states):
             states, retval = self.fn(states, scope, arguments, block)
@@ -660,7 +581,7 @@ class PlywoodPlugin(PlywoodCallable):
         self.id = None
         self.classes = []
 
-    @check(lambda run: len(run) == 2 and isinstance(run[1], PlywoodValue), 'call values are wrong')
+    # @check(lambda run: len(run) == 2 and isinstance(run[1], PlywoodValue), 'call values are wrong')
     def call(self, states, scope, arguments, block):
         return [Continue()], PlywoodWrapper(self.location, self.fn(scope, arguments, block, self.classes, self.id))
 
@@ -688,7 +609,7 @@ class PlywoodFunction(PlywoodCallable):
         self.fn = fn
         self.accepts_block = block
 
-    @check(lambda run: len(run) == 2 and isinstance(run[1], PlywoodValue), 'call values are wrong')
+    # @check(lambda run: len(run) == 2 and isinstance(run[1], PlywoodValue), 'call values are wrong')
     def call(self, states, scope, arguments, block):
         args = (arg.get_value(scope).python_value(scope) for arg in arguments.args)
         kwargs = dict(
