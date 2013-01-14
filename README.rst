@@ -2,60 +2,50 @@
 plywood
 =======
 
+A python-inspired templating language.
+
 ----
 DEMO
 ----
 
 ::
 
-    import url
+    import app.url
+    import request
     from plywood.plugin import compress
-    # looks like python so far!
-    debug = True  # yes, this template language has variable assignment
-    a = b = True  # and limited assignment chaining (no tuples)
+    # looks like python so far?
 
-    doctype(5)  # or doctype('strict') doctype('xhtml'), etc
+    doctype(5)  # or doctype('strict') doctype('xhtml'), etc.
     html:  # this'll start looking a lot like jade, but with quotes and colons
-      # even though 'html' is a function call, the  parentheses are optional,
-      # Things like 'if' and 'for' look better without 'em.  plywood has
-      # no "reserved words" - all the language constructs are implemented as
-      # plugins.
+      # even though 'html' is a function call, the parentheses are optional.
       head:
         meta(charset="utf-8")
         title:
-          # the if statement, which is a rather complicated plugin because it
-          # can be followed by any number of elif's and an optional else.
-          if self.title:
-            # notice the 'self' prefix?  When you pass variables to plywood,
-            # they get attached to the 'self' object, to differentiate between
-            # plugins and context variables.  You can register globals, too,
-            # like the request object.
-
+          if self.title:  # context variables are available on 'self'
             # docstrings are stripped of preceding whitespace and the first and
             # last newline is removed.
             """
-            {self.title} |
-            """  # string interpolation is a little more heavy-duty than
-                 # `.format()`, but more similar than different.
+            {{self.title}} |
+            """  # string interpolation uses plywood in 'inline' mode.  Each line
+                 # will be joined with a space.
           'Welcome'  # string literals require quotes
         compress('css'):
-          # passing values to tag attributes are escaped (entitized) automatically
+          # passing values to tag attributes are escaped (html-entitized) automatically
+          # if you want to escape using xml, pass {'format': 'xml'} in your options.
           link(rel='stylesheet', type='text/css', href=url.static('css/reset.css'))
           link(rel='stylesheet', type='text/css', href=url.static('css/welcome.css'))
         script(src="//ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js", type="text/javascript")
         compress('js'):
           script(src=url.static("js/underscore.js"), type="text/javascript")
           script(src=url.static("js/backbone.js"), type="text/javascript")
-        # this outputs the IE conditional, though it looks like an if statement.
-        # it's hard to tell the difference between control structures and
-        # functions that output (that's because there really *is* no difference)
         ieif 'lt IE 9':
           script(src="//html5shiv.googlecode.com/svn/trunk/html5.js", type="text/javascript")
           link(rel='stylesheet', type='text/css', href=url.static('css/ie.css'))
-        block('extra_head')  # blocks? block inheritance?  of course!
+        # blocks? block inheritance?  of course!
+        block('extra_head')
       body:
-        div(class="wrapper", id="main-header")  # verbose
-        div.wrapper(id="main-header"):  # less verbose
+        div(class="wrapper", id="main-header")
+        div.wrapper(id="main-header"):  # class shorthand - only HTML plugins have this trick
 
         # I struggled long and hard on what to do about the #id shorthands.
         # in the end, I couldn't in good conscience call this a "python
@@ -66,10 +56,12 @@ DEMO
              # I had to allow ':' and '-' in variable name.
 
           # for xml usage, the token parsing will accept some gnarly-looking elements in
-          # argument lists:
-          book(xmlns='urn:loc.gov:books',
-               xmlns:isbn='urn:ISBN:0-395-36341-6'):
-              isbn:number: 1568491379
+          # argument lists, and this uses the html-plugin constructor, so that
+          # you don't have to create a bunch of plugins for your XML documents.
+          # (you still need commas between)
+          <book xmlns='urn:loc.gov:books',
+               xmlns:isbn='urn:ISBN:0-395-36341-6'>:
+              <isbn:number>: 1568491379
           header:
             block('header'):
               # inlining is easy
