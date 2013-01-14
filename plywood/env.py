@@ -11,11 +11,11 @@ class PlywoodEnv(object):
     FUNCTIONS = {}
     HTML_PLUGINS = {}
 
-    def __init__(self, input, options, self_scope):
-        self.input = input
+    def __init__(self, options, self_scope):
         self.options = options
         scope = {}
         scope['__runtime'] = self
+        scope['__separator'] = options.get('separator', "\n")
         options = self.options
         add_indent = options.get('indent', '    ')
         scope['self'] = self_scope  # TODO: PlywoodWrapper

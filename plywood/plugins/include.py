@@ -35,10 +35,10 @@ def include(states, scope, arguments, block):
     retval = ''
     with open(template_path) as f:
         input = f.read()
-        old_input = scope['__runtime'].input
-        scope['__runtime'].input = input
+        old_input = scope['__input']
+        scope['__input'] = input
         retval = Plywood(input).run(scope['__runtime'])
-        scope['__runtime'].input = old_input
+        scope['__input'] = old_input
 
     if len(arguments.kwargs):
         for key, value in restore_scope.iteritems():

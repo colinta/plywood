@@ -80,6 +80,10 @@ def assert_dict(test, count=None):
 
 def assert_output(input, desired, scope={}, **options):
     actual = plywood(input, scope, **options)
+    assert_strings(actual, desired)
+
+
+def assert_strings(actual, desired):
     print 'actual:', actual
     print 'desired:', desired
     assert desired == actual

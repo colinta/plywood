@@ -12,7 +12,6 @@ from grammar import (
     PlywoodOperatorGrammar,
     )
 from values import (
-    PlywoodValue,
     PlywoodOperator,
     PlywoodCallOperator,
     PlywoodUnaryOperator,
@@ -23,15 +22,13 @@ from values import (
     PlywoodSlice,
     PlywoodIndices,
     PlywoodDict,
-    PlywoodHtmlPlugin,
-    PlywoodFunction,
     )
 from plywood.env import PlywoodEnv
 from exceptions import UnindentException
 
 
 def plywood(input, self_scope={}, **options):
-    runtime = PlywoodEnv(input, options, self_scope)
+    runtime = PlywoodEnv(options, self_scope)
     return Plywood(input).run(runtime)
 
 
@@ -49,6 +46,7 @@ class Plywood(object):
 
     def run(self, runtime):
         parsed = self.compile()
+        runtime.scope['__input'] = self.input
         return parsed.python_value(runtime.scope)
 
     def compile(self):

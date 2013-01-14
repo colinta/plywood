@@ -77,7 +77,7 @@ class PlywoodBlock(PlywoodValue):
                     retval += str(cmd_ret)
                     suppress_newline = SuppressNewline() in states or SuppressOneNewline() in states
                     if not self.inline and not suppress_newline:
-                        retval += "\n"
+                        retval += scope['__separator']
                     try:
                         states.remove(SuppressOneNewline())
                     except ValueError:
@@ -115,7 +115,7 @@ class PlywoodVariable(PlywoodValue):
             retval.location = self.location
             return retval
         except KeyError:
-            line_no, line = this_line(scope['__runtime'].input, self.location)
+            line_no, line = this_line(scope['__input'], self.location)
             raise PlywoodKeyError(self.name, line_no, line)
 
     def get_attr(self, scope, right):
@@ -136,30 +136,90 @@ class PlywoodString(PlywoodValue):
         self.lang = None
         if triple:
             # unindent
-            indent = None
-            lines = value.splitlines()
-            self.lang = lines.pop(0)
-            lines.pop()
-
-            for line in lines:
-                if not line:
-                    continue
-                whitespace = str(Whitespace(' \t')(line))
-                if indent is None or len(whitespace) < indent:
-                    indent = whitespace
-                    if not indent:
-                        break
-            if indent:
-                lines = map(lambda line: line[len(indent):], lines)
-                value = "\n".join(lines)
+            lang, value = PlywoodString.unindent(value, lang=True)
+            self.lang = lang
         self.value = value
         super(PlywoodString, self).__init__(location)
+
+    @staticmethod
+    def unindent(value, lang=False):
+        indent = None
+        lines = value.splitlines()
+        if lang:
+            lang = lines.pop(0)
+        if lines[-1] == '':
+            lines.pop()
+
+        for line in lines:
+            if not line:
+                continue
+            whitespace = str(Whitespace(' \t')(line))
+            if indent is None:
+                indent = whitespace
+            else:
+                new_indent = ''
+                for index, w in enumerate(whitespace[:len(indent)]):
+                    if w == indent[index]:
+                        new_indent += w
+                    else:
+                        break
+            if not indent:
+                break
+        if indent:
+            lines = map(lambda line: line[len(indent):], lines)
+            value = "\n".join(lines)
+        if lang:
+            return lang, value
+        return value
 
     def get_name(self):
         return self.value
 
     def python_value(self, scope):
-        return self.value
+        from run import Plywood
+        from env import PlywoodEnv
+
+        # string interpolation
+        original = self.value
+        retval = ''
+        index = 0
+        was_open_bracket = False
+        consuming = False
+        was_close_bracket = False
+        inside = ''
+        while index < len(original):
+            c = original[index]
+            if consuming and was_close_bracket and c == '}':
+                consuming = False
+                was_close_bracket = False
+                inside = PlywoodString.unindent(inside)
+                old_input = scope.get('__input', '')
+                runtime = PlywoodEnv({'separator': ' '}, scope)
+                scope['__input'] = inside
+                retval += Plywood(inside).run(runtime).rstrip()
+                scope['__input'] = old_input
+                inside = ''
+            elif consuming and c == '}':
+                was_close_bracket = True
+            elif consuming:
+                if was_close_bracket:
+                    inside += '}'
+                    was_close_bracket = False
+                inside += c
+            elif c == '{' and was_open_bracket:
+                was_open_bracket = False
+                consuming = True
+            elif c == '{':
+                was_open_bracket = True
+            else:
+                if was_open_bracket:
+                    retval += '{'
+                    was_open_bracket = False
+                retval += c
+            index += 1
+        if was_open_bracket:
+            raise ParseException("Unclosed '{'")
+        return retval
 
     def __eq__(self, other):
         return self.value == str(other)
