@@ -9,7 +9,7 @@ def read(fname):
 
 setup(
         name="plywood",
-        version="1.2.2",
+        version="1.2.3",
         author="Colin T.A. Gray",
         author_email="colinta@gmail.com",
         url="https://github.com/colinta/plywood",

@@ -35,8 +35,8 @@ class PlywoodStringGrammar(chomsky.String):
         parsed = self.parsed
         if isinstance(parsed, chomsky.TripleSingleQuotedString) or\
            isinstance(parsed, chomsky.TripleDoubleQuotedString):
-            return PlywoodString(self.location, unicode(parsed, 'utf-8'), triple=True)
-        return PlywoodString(self.location, unicode(parsed, 'utf-8'))
+            return PlywoodString(self.location, unicode(str(parsed), 'utf-8'), triple=True)
+        return PlywoodString(self.location, unicode(str(parsed), 'utf-8'))
 
 
 class PlywoodVariableGrammar(chomsky.Variable):
