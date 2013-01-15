@@ -1,6 +1,6 @@
 # from pytest import raises
-from plywood import plywood, PlywoodString
-from . import assert_output, assert_strings
+from plywood import PlywoodString
+from . import assert_strings
 
 
 def test_interpolation_1():
@@ -10,7 +10,7 @@ def test_interpolation_1():
 
 def test_interpolation_2():
     s = PlywoodString(0, 'testing {{self.vars}}')
-    assert_strings(s.python_value({'vars': 'da_vars'}), 'testing da_vars')
+    assert_strings(s.python_value({'self': {'vars': 'da_vars'}}), 'testing da_vars')
 
 
 def test_interpolation_multiline():
@@ -20,6 +20,6 @@ def test_interpolation_multiline():
             self.vars
         }} is fun
 ''')
-    assert_strings(s.python_value({'vars': 'da_vars'}), '''
+    assert_strings(s.python_value({'self': {'vars': 'da_vars'}}), '''
     testing da_vars is fun
 ''')

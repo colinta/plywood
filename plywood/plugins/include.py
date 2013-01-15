@@ -17,7 +17,7 @@ def include(states, scope, arguments, block):
         raise InvalidArguments('`include` does not accept a block')
     restore_scope = {}
     delete_scope = []
-    context = context['self']
+    context = scope['self']
     if len(arguments.kwargs):
         kwargs = dict(
             (item.key.get_name(), item.value)
@@ -37,7 +37,7 @@ def include(states, scope, arguments, block):
         input = f.read()
         old_input = scope['__input']
         scope['__input'] = input
-        retval = Plywood(input).run(scope['__runtime'])
+        retval = Plywood(input).run(context, scope['__runtime'])
         scope['__input'] = old_input
 
     if len(arguments.kwargs):

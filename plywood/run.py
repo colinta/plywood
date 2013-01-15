@@ -236,8 +236,6 @@ class Plywood(object):
 
         while index < len(line):
             if isinstance(left, PlywoodOperatorGrammar):
-                if precedence_order >= self.operator_precedence('unary')[0]:
-                    return left, index - 1
                 right, index = self.figure_out_precedence(line, index, self.PRECEDENCE['unary'])
                 left = PlywoodUnaryOperator(left.location, operator=str(left), value=right)
             else:

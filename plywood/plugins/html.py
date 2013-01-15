@@ -5,7 +5,7 @@ from plywood.exceptions import InvalidArguments
 
 def register_html_plugin(tag_name, is_block=False, self_closing=False):
     @PlywoodEnv.register_html_plugin(tag_name)
-    def plugin(context, arguments, block, classes):
+    def plugin(scope, arguments, block, classes):
         args = arguments.args
         kwargs = arguments.kwargs
 

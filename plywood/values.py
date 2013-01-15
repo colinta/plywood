@@ -113,7 +113,7 @@ class PlywoodVariable(PlywoodValue):
             return retval
         except KeyError:
             line_no, line = this_line(scope['__input'], self.location)
-            raise PlywoodKeyError(self.name, line_no, line)
+            raise PlywoodKeyError(self.name, scope, scope['__input'])
 
     def get_attr(self, scope, right):
         return self.get_value(scope).get_attr(scope, right)
@@ -184,6 +184,11 @@ class PlywoodString(PlywoodValue):
         consuming = False
         was_close_bracket = False
         inside = ''
+        runtime = PlywoodEnv({'separator': ' '})
+        context = scope.get('self', {})
+        print("""=============== values.py at line {0} ===============
+context: {1!r}
+""".format(__import__('sys')._getframe().f_lineno - 2, context, ))
         while index < len(original):
             c = original[index]
             if consuming and was_close_bracket and c == '}':
@@ -191,7 +196,6 @@ class PlywoodString(PlywoodValue):
                 was_close_bracket = False
                 inside = PlywoodString.unindent(inside)
                 old_input = scope.get('__input', '')
-                runtime = PlywoodEnv({'separator': ' '})
                 scope['__input'] = inside
                 retval += Plywood(inside).run(context, runtime).rstrip()
                 scope['__input'] = old_input
