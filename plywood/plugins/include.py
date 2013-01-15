@@ -17,18 +17,18 @@ def include(states, scope, arguments, block):
         raise InvalidArguments('`include` does not accept a block')
     restore_scope = {}
     delete_scope = []
-    self_scope = scope['self']
+    context = context['self']
     if len(arguments.kwargs):
         kwargs = dict(
             (item.key.get_name(), item.value)
                 for item in arguments.kwargs
                 )
         for key, value in kwargs.iteritems():
-            if key in self_scope:
-                restore_scope[key] = self_scope[key]
+            if key in context:
+                restore_scope[key] = context[key]
             else:
                 delete_scope.append(key)
-            self_scope[key] = value
+            context[key] = value
 
     template_name = arguments.args[0].python_value(scope)
     template_path = os.path.join(scope['__path'], template_name) + '.ply'
@@ -42,9 +42,9 @@ def include(states, scope, arguments, block):
 
     if len(arguments.kwargs):
         for key, value in restore_scope.iteritems():
-            self_scope[key] = value
+            context[key] = value
         for key in delete_scope:
-            del self_scope[key]
+            del context[key]
     return states, retval
 
 

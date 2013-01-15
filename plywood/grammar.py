@@ -67,7 +67,6 @@ class PlywoodOperatorGrammar(chomsky.Grammar):
         '&', '|', '~', '<<', '>>',
         '**',  '//',  '+',  '-',  '/',  '*',  '%',
         '.',  # get_attr
-        '@',  # id/name
         ',',  # auto arg
         (chomsky.WordStart() + chomsky.Any('is', 'in', 'not', 'and', 'or') + chomsky.WordEnd()),
     )

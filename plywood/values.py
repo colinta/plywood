@@ -100,9 +100,6 @@ class PlywoodVariable(PlywoodValue):
     def get_name(self):
         return self.name
 
-    def set_id(self, scope, var):
-        return self.get_value(scope).set_id(scope, var)
-
     def python_value(self, scope):
         return self.get_value(scope).python_value(scope)
 
@@ -194,9 +191,9 @@ class PlywoodString(PlywoodValue):
                 was_close_bracket = False
                 inside = PlywoodString.unindent(inside)
                 old_input = scope.get('__input', '')
-                runtime = PlywoodEnv({'separator': ' '}, scope)
+                runtime = PlywoodEnv({'separator': ' '})
                 scope['__input'] = inside
-                retval += Plywood(inside).run(runtime).rstrip()
+                retval += Plywood(inside).run(context, runtime).rstrip()
                 scope['__input'] = old_input
                 inside = ''
             elif consuming and c == '}':
@@ -325,7 +322,7 @@ class PlywoodOperator(PlywoodValue):
         op = str(self.operator)
         if self.operator == '[]':
             return '{self.left}[{self.right}]'.format(self=self)
-        if self.operator not in ['.', '@']:
+        if self.operator not in ['.']:
             op = ' ' + op + ' '
         return '{self.left}{op}{self.right}'.format(self=self, op=op)
 
@@ -605,15 +602,13 @@ class PlywoodRuntime(PlywoodCallable):
 class PlywoodHtmlPlugin(PlywoodCallable):
     def __init__(self, fn):
         self.fn = fn
-        self.id = None
         self.classes = []
 
     def call(self, states, scope, arguments, block):
-        return [Continue()], PlywoodWrapper(self.location, self.fn(scope, arguments, block, self.classes, self.id))
+        return [Continue()], PlywoodWrapper(self.location, self.fn(scope, arguments, block, self.classes))
 
     def copy(self):
         copy = type(self)(self.fn)
-        copy.id = self.id
         copy.classes.extend(self.classes)
         if hasattr(self, 'location'):
             copy.location = self.location
@@ -622,11 +617,6 @@ class PlywoodHtmlPlugin(PlywoodCallable):
     def get_attr(self, scope, right):
         copy = self.copy()
         copy.classes.append(right.get_name())
-        return copy
-
-    def set_id(self, scope, var):
-        copy = self.copy()
-        copy.id = var.get_name()
         return copy
 
 

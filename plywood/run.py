@@ -27,9 +27,9 @@ from plywood.env import PlywoodEnv
 from exceptions import UnindentException
 
 
-def plywood(input, self_scope={}, **options):
-    runtime = PlywoodEnv(options, self_scope)
-    return Plywood(input).run(runtime)
+def plywood(input, context={}, **options):
+    runtime = PlywoodEnv(options)
+    return Plywood(input).run(context, runtime)
 
 
 class Plywood(object):
@@ -44,9 +44,10 @@ class Plywood(object):
     def __repr__(self):
         return "{type.__name__}({self.buffer!r})".format(type=type(self), self=self)
 
-    def run(self, runtime):
+    def run(self, context, runtime):
         parsed = self.compile()
         runtime.scope['__input'] = self.input
+        runtime.scope['self'] = context
         return parsed.python_value(runtime.scope)
 
     def compile(self):
@@ -115,7 +116,6 @@ class Plywood(object):
         'high':  (100, LTR),
         '[]':    (17, LTR),
         '.':     (17, LTR),
-        '@':     (17, LTR),
         '()':    (16, LTR),
         '**':    (14, RTL),
         'unary': (13, RTL),

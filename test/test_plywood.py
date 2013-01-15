@@ -86,26 +86,3 @@ p.important: span.warning.gray: em: 'text'
 '''
     desired = '<p class="important"><span class="warning gray"><em>text</em></span></p>\n'
     assert_output(input, desired)
-
-
-def test_id_shorthand():
-    input = '''
-p@label1.label1: 'text'
-@label2.label2: 'text'
-p.label3@label3: 'text'
-.label4@label4: 'text'
-'''
-    desired = '''<p id="label1" class="label1">text</p>
-<div id="label2" class="label2">text</div>
-<div id="label3" class="label3">text</div>
-<div id="label4" class="label4">text</div>
-'''
-    assert_output(input, desired)
-
-
-def test_class_id_shorthand():
-    input = '''
-p.section: span@warning.gray.span12: em: 'text'
-'''
-    desired = '<p class="section"><span class="gray span12" id="warning"><em>text</em></span></p>\n'
-    assert_output(input, desired)

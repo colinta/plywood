@@ -5,7 +5,7 @@ from plywood.exceptions import InvalidArguments
 
 def register_html_plugin(tag_name, is_block=False, self_closing=False):
     @PlywoodEnv.register_html_plugin(tag_name)
-    def plugin(scope, arguments, block, classes, id):
+    def plugin(context, arguments, block, classes):
         args = arguments.args
         kwargs = arguments.kwargs
 
@@ -17,12 +17,11 @@ def register_html_plugin(tag_name, is_block=False, self_closing=False):
 
         kwargs_class = ''
         for item in kwargs:
-            key = item.key.get_value(scope)
-            value = item.value.get_value(scope)
-            if key == 'class':
-                kwargs_class = value
-            elif key == 'id':
-                id = value
+            key = item.key.python_value(scope)
+            if key in ['class']:
+                value = item.value.python_value(scope)
+                if key == 'class':
+                    kwargs_class = value
 
         if classes and kwargs_class:
             classes.append(kwargs_class)
@@ -35,7 +34,7 @@ def register_html_plugin(tag_name, is_block=False, self_closing=False):
         attrs = ''
         for item in kwargs:
             key = item.key.python_value(scope)
-            if key == 'class' or key == 'id':
+            if key == 'class':
                 continue
             value = item.value.python_value(scope)
             if value is False:
@@ -47,8 +46,6 @@ def register_html_plugin(tag_name, is_block=False, self_closing=False):
 
         if classes:
             attrs += ' class="' + ' '.join(classes) + '"'
-        if id:
-            attrs += ' id="' + id + '"'
 
         if self_closing:
             return '<' + tag_name + attrs + ' />'

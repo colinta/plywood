@@ -473,20 +473,6 @@ div.classy: 'text'
     assert_string(test[0].block[0], 'text')
 
 
-def test_auto_dic():
-    test = Plywood('''
-@name.classy: 'text'
-''').compile()
-
-    assert_block(test, 1)
-    assert_unary(test[0], '@')
-    assert_operator(test[0].left, '.')
-    assert_variable(test[0].left.left, 'div')
-    assert_variable(test[0].left.right, 'classy')
-    assert_block(test[0].block, 1)
-    assert_string(test[0].block[0], 'text')
-
-
 def test_getitem():
     test = Plywood('''
 div['something'] = 'text'
@@ -536,36 +522,6 @@ div['item'].attr['attritem'] = 'text'
     assert_slice(test[0].left.right, 1)
     assert_string(test[0].left.right[0], 'attritem')
     assert_string(test[0].right, 'text')
-
-
-def test_id_div():
-    test = Plywood('''
-div@any_id: 'text'
-''').compile()
-
-    assert_block(test, 1)
-    assert_function(test[0])
-    assert_operator(test[0].left, '@')
-    assert_variable(test[0].left.left, 'div')
-    assert_variable(test[0].left.right, 'any_id')
-    assert_block(test[0].block, 1)
-    assert_string(test[0].block[0], 'text')
-
-
-def test_classy_id_div():
-    test = Plywood('''
-div.classy@any_id: 'text'
-''').compile()
-
-    assert_block(test, 1)
-    assert_function(test[0])
-    assert_operator(test[0].left, '@')
-    assert_operator(test[0].left.left, '.')
-    assert_variable(test[0].left.left.left, 'div')
-    assert_variable(test[0].left.left.right, 'classy')
-    assert_variable(test[0].left.right, 'any_id')
-    assert_block(test[0].block, 1)
-    assert_string(test[0].block[0], 'text')
 
 
 def test_multi_inline():

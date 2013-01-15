@@ -125,16 +125,6 @@ def unary_get_attr(value, scope):
     return PlywoodOperator.handle('.', PlywoodVariable(value.location, 'div'), value, scope)
 
 
-@PlywoodOperator.register('@')
-def set_id(left, right, scope):
-    return left.set_id(scope, right)
-
-
-@PlywoodUnaryOperator.register('@')
-def unary_set_id(value, scope):
-    return PlywoodOperator.handle('@', PlywoodVariable(value.location, 'div'), value, scope)
-
-
 @PlywoodUnaryOperator.register('-')
 def negate(value, scope):
     return - value.python_value(scope)

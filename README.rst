@@ -13,7 +13,6 @@ DEMO
     import app.url
     import request
     from plywood.plugin import compress
-    # looks like python so far?
 
     doctype(5)  # or doctype('strict') doctype('xhtml'), etc.
     html:  # this'll start looking a lot like jade, but with quotes and colons
@@ -44,17 +43,7 @@ DEMO
         # blocks? block inheritance?  of course!
         block('extra_head')
       body:
-        div(class="wrapper", id="main-header")
-        div.wrapper(id="main-header"):  # class shorthand - only HTML plugins have this trick
-
-        # I struggled long and hard on what to do about the #id shorthands.
-        # in the end, I couldn't in good conscience call this a "python
-        # inspired" language if '#' was not the comment delimiter.  So the id
-        # shorthand is "@" instead:
-        div.wrapper@main-header:  # and yes, that '-' is part of the
-             # 'main-header' token.  to support xml/html tag and attribute name,
-             # I had to allow ':' and '-' in variable name.
-
+        div(class="wrapper", id="main-header"):
           # for xml usage, the token parsing will accept some gnarly-looking elements in
           # argument lists, and this uses the html-plugin constructor, so that
           # you don't have to create a bunch of plugins for your XML documents.
@@ -120,33 +109,17 @@ INSTALLATION
     $ ply < in.ply > out.html
 
 
-------
-SYNTAX
-------
+-------
+RUNTIME
+-------
 
-Each line starts with a statement, which can either be a function
-(``div``, ``block``) a literal (``'``, ``'''``), or a control statement (``if``,
-``else``, ``for``).
+When you run a plywood template, a lot of the work is done using plugins, which
+are loaded into the global context - the ``PlywoodEnv`` object.  This only needs
+to happen once per application - the ``PlywoodEnv`` can be reused by any number
+of templates (though it is not thread safe - that will be remedied soon).
 
-Functions get called with the arguments and a "block"::
-
-    # arguments are ((), {}), block is Block()
-    p
-    # arguments are ((), {'class': 'divvy'}), block is Block()
-    div(class="divvy")
-    # arguments are (('autofocus'), {'id': 'bio'}), block is Block(Literal('This is my bio'),)
-    textarea("autofocus", id="bio"): 'This is my bio'
-
-Even if there is no "block", you'll get at the least at empty block object that
-you can call ``block.get_value()`` on.  It will be "falsey", though, so you can check
-for the existence of a block.  The minimum "truthy" block is an empty string.
-That means ``div: ''`` will have a "truthy" block, but ``div`` will have a
-"falsey" block.
-
-You can extend the crap out of plywood, because ``div``, ``if``, ``block``, the
-whole lot, are all written as plywood extensions.  Without the builtin
-extensions, the language couldn't actually *do* anything, because it is at its
-core just a language grammar.
+When you actually ``run`` a compiled ``Plywood`` object, you can pass in a dict
+of values that you want
 
 -------
 WHY!?!?
