@@ -47,7 +47,7 @@ DEMO
           # for xml usage, the token parsing will accept some gnarly-looking elements in
           # argument lists, and this uses the html-plugin constructor, so that
           # you don't have to create a bunch of plugins for your XML documents.
-          # (you still need commas between)
+          # (you still need commas between arguments)
           <book xmlns='urn:loc.gov:books',
                xmlns:isbn='urn:ISBN:0-395-36341-6'>:
               <isbn:number>: 1568491379

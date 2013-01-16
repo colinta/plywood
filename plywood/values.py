@@ -1,14 +1,12 @@
 from chomsky import Whitespace, ParseException
 from runtime import Runtime, Continue, Skip, SuppressNewline, SuppressOneNewline
 from exceptions import PlywoodKeyError, this_line, BreakException, ContinueException
+from element import output_element
 
 
 class PlywoodValue(object):
     def __init__(self, location):
         self.location = location
-
-    def call(self, states, scope, arguments, block):
-        return [Continue()], self
 
     def get_attr(self, scope, right):
         raise Exception("{self!r} has no property {right!r}".format(self=self, right=right))
@@ -186,9 +184,6 @@ class PlywoodString(PlywoodValue):
         inside = ''
         runtime = PlywoodEnv({'separator': ' '})
         context = scope.get('self', {})
-        print("""=============== values.py at line {0} ===============
-context: {1!r}
-""".format(__import__('sys')._getframe().f_lineno - 2, context, ))
         while index < len(original):
             c = original[index]
             if consuming and was_close_bracket and c == '}':
@@ -340,8 +335,7 @@ class PlywoodCallOperator(PlywoodOperator):
 
     def run(self, states, scope):
         if Continue() in states:
-            retval = self.left.get_value(scope).call(states, scope, self.right, self.block)
-            return retval
+            return self.left.get_value(scope).call(states, scope, self.right, self.block)
         else:
             raise Exception(''.join(states))
 
@@ -431,7 +425,10 @@ class PlywoodParens(PlywoodValue):
         extra = ''
         if self.is_set and len(self.args) == 1:
             extra = ','
-        return type(self).__name__ + '(' + ', '.join(repr(v) for v in self.args) + extra + ')'
+        between = ''
+        if self.args and self.kwargs:
+            between = ', '
+        return type(self).__name__ + '(' + ', '.join(repr(v) for v in self.args) + between + ', '.join(repr(v) for v in self.kwargs) + extra + ')'
 
     def __str__(self):
         extra = ''
@@ -483,6 +480,39 @@ class PlywoodList(PlywoodValue):
 
     def __str__(self):
         return '[' + ', '.join(str(v) for v in self.values) + ']'
+
+
+class PlywoodXml(PlywoodValue):
+    def __init__(self, location, element, arguments):
+        self.element = element
+        self.arguments = arguments
+        self.location = location
+
+    def run(self, states, scope):
+        if not hasattr(self, 'location'):
+            raise Exception(repr(self) + ' has no location')
+        arguments = PlywoodParens(self.location, [])
+        block = PlywoodBlock(self.location, [])
+        if Continue() in states:
+            return self.call(states, scope, arguments, block)
+        else:
+            return None
+
+    def python_value(self, scope):
+        return self.get_value(scope).python_value(scope)
+
+    def call(self, states, scope, arguments, block):
+        if Continue() in states:
+            is_self_closing = not block
+            return [Continue()], PlywoodWrapper(self.location, output_element(scope, self.arguments, block, tag_name=self.element.get_name(), classes=[], is_self_closing=is_self_closing))
+        else:
+            raise Exception(''.join(states))
+
+    def __repr__(self):
+        return type(self).__name__ + '<' + repr(self.element) + ' ' + ', '.join(repr(v) for v in self.arguments) + '>'
+
+    def __str__(self):
+        return '<' + self.element + ' ' + ', '.join(str(v) for v in self.arguments) + '>'
 
 
 class PlywoodIndices(PlywoodValue):

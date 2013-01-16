@@ -19,6 +19,7 @@ from values import (
     PlywoodParens,
     PlywoodKvp,
     PlywoodList,
+    PlywoodXml,
     PlywoodSlice,
     PlywoodIndices,
     PlywoodDict,
@@ -192,12 +193,13 @@ class Plywood(object):
         line = []
         prev = None
         while not self.test(until_token):
-            token = self.consume_token()
+            prev_is_operator = not prev or isinstance(prev, PlywoodOperatorGrammar)
+            token = self.consume_token(prev_is_operator=prev_is_operator)
+            prev = token
             # there is an unfortunate exception for '['.  As an operator, it is
             # the 'get_item' operator, but as a token it is a list token.  this
             # must be resolved *before* figure_out_precedence is called.
             is_indexable = isinstance(token, PlywoodList) or isinstance(token, PlywoodSlice)
-            prev_is_operator = not prev or isinstance(prev, PlywoodOperatorGrammar)
             if is_indexable and not prev_is_operator:
                 op = PlywoodOperatorGrammar('[]')
                 op.location = token.location
@@ -205,7 +207,6 @@ class Plywood(object):
                 if isinstance(token, PlywoodList):
                     token = PlywoodIndices(token.location, token.values, token.force_list)
             line.append(token)
-            prev = token
 
         if line:
             return self.figure_out_precedence(line)[0]
@@ -273,24 +274,25 @@ class Plywood(object):
                     index -= 1
                     right, index = self.figure_out_precedence(line, index, self.operator_precedence('low'))
                     # right could be a series of 'token,token' operations.  flatten those out
-                    right = self.convert_to_args(right)
+                    right = self.convert_to_args(left.location, right)
                     left = PlywoodCallOperator(left, right)
         return left, index
 
-    def convert_to_args(self, token):
+    def convert_to_args(self, location, token):
         tokens = []
         while isinstance(token, PlywoodOperator) and token.operator == ',':
             tokens.append(token.left)
             token = token.right
         tokens.append(token)
 
-        return PlywoodParens(token.location, tokens)
+        return PlywoodParens(location, tokens)
 
  # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
-    TOKEN_TESTS = (
+    TOKEN_TESTS_VAL = (
         ('from', 'from'),
         ('number', 'number'),
+        ('xml_open', 'xml'),
         ('operator', 'operator'),
         ('variable', 'variable'),
         ('string', 'string'),
@@ -299,10 +301,23 @@ class Plywood(object):
         ('dict_open', 'dict'),
         ('block_open', 'block'),
     )
+    TOKEN_TESTS_OP = (
+        ('from', 'from'),
+        ('number', 'number'),
+        ('operator', 'operator'),
+        ('variable', 'variable'),
+        ('string', 'string'),
+        ('parens_open', 'parens'),
+        ('xml_open', 'xml'),
+        ('list_open', 'list'),
+        ('dict_open', 'dict'),
+        ('block_open', 'block'),
+    )
 
-    def consume_token(self):
+    def consume_token(self, prev_is_operator=False):
         retval = None
-        for token_test, token_consume in self.TOKEN_TESTS:
+        TOKEN_TESTS = prev_is_operator and self.TOKEN_TESTS_VAL or self.TOKEN_TESTS_OP
+        for token_test, token_consume in TOKEN_TESTS:
             if self.test(token_test):
                 retval = self.consume(token_consume)
                 break
@@ -372,6 +387,27 @@ class Plywood(object):
         else:
             return PlywoodList(location, tokens, force_list=force_list)
 
+    def consume_xml(self):
+        location = self.buffer.position
+        self.consume('xml_open')
+        element = self.consume('variable').plywood_value()
+        prev_whitespace = self.whitespace
+        self.whitespace = 'multiline_whitespace'
+
+        tokens = []
+        while not self.test('xml_close'):
+            self.consume('whitespace')
+            item = self.consume_until('comma_close_xml')
+            tokens.append(item)
+            if self.test(','):
+                self.consume(',')
+                self.consume('whitespace')
+        self.consume('xml_close')
+        self.whitespace = prev_whitespace
+
+        arguments = PlywoodParens(location, tokens)
+        return PlywoodXml(location, element, arguments)
+
     def consume_dict(self):
         location = self.buffer.position
         self.consume('dict_open')
@@ -403,7 +439,7 @@ class Plywood(object):
         module_name = self.consume('variable').plywood_value()
         self.consume('singleline_whitespace')
         Literal('import')(self.buffer)
-        imports = self.convert_to_args(self.consume_until('eol', inline=True))
+        imports = self.convert_to_args(location, self.consume_until('eol', inline=True))
 
         parens = PlywoodParens(location, [module_name, imports])
         return PlywoodCallOperator(from_var, parens)
@@ -421,6 +457,7 @@ class Plywood(object):
 
         'comma_close_parens': (Literal(',') | Literal(')')).test,
         'comma_close_list': (Literal(',') | Literal(']')).test,
+        'comma_close_xml': (Literal(',') | Literal('>')).test,
         'colon_close_key': Literal(':').test,
         'comma_close_dict': (Literal(',') | Literal('}')).test,
     }
@@ -436,6 +473,8 @@ class Plywood(object):
         ':': Char(':'),
         '=': Char('='),
 
+        'xml_open': Literal('<'),
+        'xml_close': Literal('>'),
         'parens_open': Literal('('),
         'parens_close': Literal(')'),
         'list_open': Literal('['),
