@@ -13,7 +13,8 @@ class PlywoodEnv(object):
 
     def __init__(self, options):
         self.options = options
-        scope = {}
+        self.scope = scope = {}
+
         scope['__runtime'] = self
         scope['__separator'] = options.get('separator', "\n")
         options = self.options
@@ -47,19 +48,21 @@ class PlywoodEnv(object):
 
         scope['__indent'] = indent_apply
         scope.update(self.GLOBAL)
-        for key, runtime in self.RUNTIME.iteritems():
-            fn, kwargs = runtime
-            value = PlywoodRuntime(fn, **kwargs)
-            scope[key] = value
-        for key, function in self.FUNCTIONS.iteritems():
-            fn, kwargs = function
-            value = PlywoodFunction(fn, **kwargs)
-            scope[key] = value
-        for key, plugin in self.HTML_PLUGINS.iteritems():
-            fn, kwargs = plugin
-            value = PlywoodHtmlPlugin(fn, **kwargs)
-            scope[key] = value
-        self.scope = scope
+
+        include_defaults = options.get('defaults', True)
+        if include_defaults:
+            for key, runtime in self.RUNTIME.iteritems():
+                fn, kwargs = runtime
+                value = PlywoodRuntime(fn, **kwargs)
+                scope[key] = value
+            for key, function in self.FUNCTIONS.iteritems():
+                fn, kwargs = function
+                value = PlywoodFunction(fn, **kwargs)
+                scope[key] = value
+            for key, plugin in self.HTML_PLUGINS.iteritems():
+                fn, kwargs = plugin
+                value = PlywoodHtmlPlugin(fn, **kwargs)
+                scope[key] = value
 
     @classmethod
     def register(cls, name, value):

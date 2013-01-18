@@ -1,6 +1,6 @@
 from chomsky import Whitespace, ParseException
 from runtime import Runtime, Continue, Skip, SuppressNewline, SuppressOneNewline
-from exceptions import PlywoodKeyError, this_line, BreakException, ContinueException
+from exceptions import PlywoodKeyError, this_line, BreakException, ContinueException, InvalidArguments
 from element import output_element
 
 
@@ -19,6 +19,15 @@ class PlywoodValue(object):
 
     def get_value(self, scope):
         return self
+
+    def call(self, states, scope, arguments, block):
+        if len(block.lines):
+            raise InvalidArguments('`str` does not support block argument')
+        if len(arguments.args) != 1 \
+            or len(arguments.kwargs):
+            raise InvalidArguments('`str` only accepts one conditional argument')
+        retval = self.python_value(scope) + arguments.args[0].python_value(scope)
+        return [Continue()], PlywoodWrapper(self.location, retval)
 
     def run(self, states, scope):
         if Continue() in states:
@@ -81,6 +90,8 @@ class PlywoodBlock(PlywoodValue):
                     except ValueError:
                         pass
         except (BreakException, ContinueException) as e:
+            # store the current output, because it is still relevant!
+            # plugins that support break and continue should return this string
             raise type(e)(retval)
 
         try:
@@ -135,6 +146,15 @@ class PlywoodString(PlywoodValue):
             self.lang = lang
         self.value = value
         super(PlywoodString, self).__init__(location)
+
+    def call(self, states, scope, arguments, block):
+        if len(block.lines):
+            raise InvalidArguments('`str` does not support block argument')
+        if len(arguments.args) != 1 \
+            or len(arguments.kwargs):
+            raise InvalidArguments('`str` only accepts one conditional argument')
+        retval = unicode(self.python_value(scope)) + unicode(arguments.args[0].python_value(scope))
+        return [Continue()], PlywoodWrapper(self.location, retval)
 
     @staticmethod
     def unindent(value, lang=False):
@@ -253,6 +273,15 @@ class PlywoodNumber(PlywoodValue):
     def __init__(self, location, value):
         self.value = value
         super(PlywoodNumber, self).__init__(location)
+
+    def call(self, states, scope, arguments, block):
+        if len(block.lines):
+            raise InvalidArguments('`str` does not support block argument')
+        if len(arguments.args) != 1 \
+            or len(arguments.kwargs):
+            raise InvalidArguments('`str` only accepts one conditional argument')
+        retval = self.python_value(scope) * arguments.args[0].python_value(scope)
+        return [Continue()], PlywoodWrapper(self.location, retval)
 
     def python_value(self, scope):
         return self.value

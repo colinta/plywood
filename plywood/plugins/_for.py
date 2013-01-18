@@ -13,10 +13,6 @@ from empty import EmptyState
 from _break import BreakException, ContinueException
 
 
-class ForLoop(object):
-    pass
-
-
 @PlywoodEnv.register_runtime('for')
 def _for(states, scope, arguments, block):
     if not len(block.lines):
