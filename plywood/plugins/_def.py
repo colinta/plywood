@@ -84,9 +84,6 @@ def _def(states, scope, arguments, block):
             raise InvalidArguments('Unassigned values: {0}'.format(', '.join(local_arglist)))
         retval = block.get_value(called_scope)
         called_scope.pop()
-        print("""=============== _def.py at line {0} ===============
-retval: {1!r}
-""".format(__import__('sys')._getframe().f_lineno - 2, retval, ))
         return [Continue()], retval
     the_function.__name__ = function_name
 

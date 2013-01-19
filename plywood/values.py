@@ -73,9 +73,6 @@ class PlywoodBlock(PlywoodValue):
         retval = ''
         try:
             for cmd in self.lines:
-                print("""=============== values.py at line {0} ===============
-cmd: {1!r}
-""".format(__import__('sys')._getframe().f_lineno - 2, cmd, ))
                 states, cmd_ret = cmd.run(states, scope)
                 # commands that *do* return a value, but do not want that value
                 # output, e.g. assignments.
@@ -83,12 +80,6 @@ cmd: {1!r}
                     states.remove(Skip())
                     states.append(Continue())
                 else:
-                    print("""=============== values.py at line {0} ===============
-cmd_ret: {1!r}
-""".format(__import__('sys')._getframe().f_lineno - 2, cmd_ret, ))
-                    print("""=============== values.py at line {0} ===============
-cmd_ret.python_value(scope): {1!r}
-""".format(__import__('sys')._getframe().f_lineno - 2, cmd_ret.python_value(scope), ))
                     cmd_ret = cmd_ret.python_value(scope)
                     if cmd_ret is not None:
                         retval += str(cmd_ret)
