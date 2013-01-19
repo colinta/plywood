@@ -33,7 +33,10 @@ def this_line(input, location):
             break
     while newline_end < len(input):
         newline_end += 1
-        if input[newline_end] == "\n":
+        try:
+            if input[newline_end] == "\n":
+                break
+        except IndexError:
             break
     line_no = input[:newline_start].count("\n")
     return line_no, input[newline_start:newline_end]

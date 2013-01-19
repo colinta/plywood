@@ -15,6 +15,8 @@ def include(states, scope, arguments, block):
         raise InvalidArguments('`include` only accepts one argument')
     if len(block.lines):
         raise InvalidArguments('`include` does not accept a block')
+
+    scope.push()
     restore_scope = {}
     delete_scope = []
     context = scope['self']
@@ -35,10 +37,10 @@ def include(states, scope, arguments, block):
     retval = ''
     with open(template_path) as f:
         input = f.read()
-        old_input = scope['__input']
+        scope.push()
         scope['__input'] = input
         retval = Plywood(input).run(context, scope['__runtime'])
-        scope['__input'] = old_input
+        scope.pop()
 
     if len(arguments.kwargs):
         for key, value in restore_scope.iteritems():

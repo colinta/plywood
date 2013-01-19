@@ -2,6 +2,7 @@
 Stores environment settings, e.g. options, and built-in functions.
 """
 from plywood.values import PlywoodRuntime, PlywoodFunction, PlywoodHtmlPlugin
+from plywood.scope import Scope
 
 
 class PlywoodEnv(object):
@@ -13,7 +14,7 @@ class PlywoodEnv(object):
 
     def __init__(self, options):
         self.options = options
-        self.scope = scope = {}
+        self.scope = scope = Scope()
 
         scope['__runtime'] = self
         scope['__separator'] = options.get('separator', "\n")

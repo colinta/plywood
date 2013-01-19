@@ -67,7 +67,9 @@ def greater_than_or_equal(left, right, scope):
 
 @PlywoodOperator.register('in')
 def boolean_in(left, right, scope):
-    return left.python_value(scope) in right.python_value(scope)
+    left = left.python_value(scope)
+    right = right.python_value(scope)
+    return left in right
 
 
 @PlywoodOperator.register('is')

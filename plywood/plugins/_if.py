@@ -14,8 +14,8 @@ class ElseState(Runtime):
 def _if(states, scope, arguments, block):
     if not len(block.lines):
         raise InvalidArguments('A block is required in `if`')
-    if not len(arguments.args):
-        raise InvalidArguments('A condition is required in `if`')
+    if len(arguments.args) != 1:
+        raise InvalidArguments('A condition (and only one condition) is required in `if`')
     if len(arguments.args) != 1 or len(arguments.kwargs):
         raise InvalidArguments('`if` only accepts one argument')
     arg = arguments.args[0].python_value(scope)
@@ -28,8 +28,8 @@ def _if(states, scope, arguments, block):
 def _elif(states, scope, arguments, block):
     if not len(block.lines):
         raise InvalidArguments('A block is required in `elif`')
-    if not len(arguments.args):
-        raise InvalidArguments('A condition is required in `elif`')
+    if len(arguments.args) != 1:
+        raise InvalidArguments('A condition (and only one condition) is required in `elif`')
     if len(arguments.args) != 1 or len(arguments.kwargs):
         raise InvalidArguments('`elif` only accepts one argument')
     arg = arguments.args[0].python_value(scope)

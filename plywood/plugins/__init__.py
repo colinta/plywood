@@ -6,6 +6,7 @@ from ._if import *
 from ._for import *
 from ._while import *
 from ._import import *
+from ._def import *
 from .include import *
 from .extends import *
 from .entitize import *

@@ -73,22 +73,32 @@ class PlywoodBlock(PlywoodValue):
         retval = ''
         try:
             for cmd in self.lines:
+                print("""=============== values.py at line {0} ===============
+cmd: {1!r}
+""".format(__import__('sys')._getframe().f_lineno - 2, cmd, ))
                 states, cmd_ret = cmd.run(states, scope)
+                # commands that *do* return a value, but do not want that value
+                # output, e.g. assignments.
                 if Skip() in states:
                     states.remove(Skip())
                     states.append(Continue())
-                    cmd_ret = None
                 else:
+                    print("""=============== values.py at line {0} ===============
+cmd_ret: {1!r}
+""".format(__import__('sys')._getframe().f_lineno - 2, cmd_ret, ))
+                    print("""=============== values.py at line {0} ===============
+cmd_ret.python_value(scope): {1!r}
+""".format(__import__('sys')._getframe().f_lineno - 2, cmd_ret.python_value(scope), ))
                     cmd_ret = cmd_ret.python_value(scope)
-                if cmd_ret is not None:
-                    retval += str(cmd_ret)
-                    suppress_newline = SuppressNewline() in states or SuppressOneNewline() in states
-                    if not self.inline and not suppress_newline:
-                        retval += scope['__separator']
-                    try:
-                        states.remove(SuppressOneNewline())
-                    except ValueError:
-                        pass
+                    if cmd_ret is not None:
+                        retval += str(cmd_ret)
+                        suppress_newline = SuppressNewline() in states or SuppressOneNewline() in states
+                        if not self.inline and not suppress_newline:
+                            retval += scope['__separator']
+                        try:
+                            states.remove(SuppressOneNewline())
+                        except ValueError:
+                            pass
         except (BreakException, ContinueException) as e:
             # store the current output, because it is still relevant!
             # plugins that support break and continue should return this string
@@ -106,6 +116,9 @@ class PlywoodVariable(PlywoodValue):
         self.name = name
         super(PlywoodVariable, self).__init__(location)
 
+    def run(self, states, scope):
+        return self.get_value(scope).run(states, scope)
+
     def get_name(self):
         return self.name
 
@@ -118,7 +131,8 @@ class PlywoodVariable(PlywoodValue):
             if not isinstance(retval, PlywoodValue):
                 retval = PlywoodWrapper(self.location, retval)
                 scope[self.name] = retval
-            retval.location = self.location
+            else:
+                retval.location = self.location
             return retval
         except KeyError:
             line_no, line = this_line(scope['__input'], self.location)
@@ -203,6 +217,7 @@ class PlywoodString(PlywoodValue):
         was_close_bracket = False
         inside = ''
         runtime = PlywoodEnv({'separator': ' '})
+        scope.push()
         context = scope.get('self', {})
         while index < len(original):
             c = original[index]
@@ -210,10 +225,8 @@ class PlywoodString(PlywoodValue):
                 consuming = False
                 was_close_bracket = False
                 inside = PlywoodString.unindent(inside)
-                old_input = scope.get('__input', '')
                 scope['__input'] = inside
                 retval += Plywood(inside).run(context, runtime).rstrip()
-                scope['__input'] = old_input
                 inside = ''
             elif consuming and c == '}':
                 was_close_bracket = True
@@ -234,7 +247,8 @@ class PlywoodString(PlywoodValue):
                 retval += c
             index += 1
         if was_open_bracket:
-            raise ParseException("Unclosed '{'")
+            raise ParseException("Unclosed '{{'")
+        scope.pop()
         return retval
 
     def __eq__(self, other):

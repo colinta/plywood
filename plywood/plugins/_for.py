@@ -21,7 +21,7 @@ def _for(states, scope, arguments, block):
         or len(arguments.kwargs) \
         or not isinstance(arguments.args[0], PlywoodOperator) \
         or arguments.args[0].operator != 'in':
-        raise InvalidArguments('`for` only accepts an "in" operation')
+        raise InvalidArguments('`for` only accepts an `in` operation')
     var = arguments.args[0].left
     if not isinstance(var, PlywoodVariable) and not isinstance(var, PlywoodParens):
         raise InvalidArguments('`for` expects a variable name or tuple of variable names')

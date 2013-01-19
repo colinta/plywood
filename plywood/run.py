@@ -26,6 +26,7 @@ from values import (
     )
 from plywood.env import PlywoodEnv
 from exceptions import UnindentException
+from scope import Scope
 
 
 def plywood(input, context={}, **options):
@@ -48,7 +49,7 @@ class Plywood(object):
     def run(self, context, runtime):
         parsed = self.compile()
         runtime.scope['__input'] = self.input
-        runtime.scope['self'] = context
+        runtime.scope['self'] = Scope(context)
         return parsed.python_value(runtime.scope)
 
     def compile(self):
