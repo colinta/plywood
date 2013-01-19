@@ -147,7 +147,7 @@ class PlywoodString(PlywoodValue):
         self.lang = None
         if triple:
             # unindent
-            lang, value = PlywoodString.unindent(value, lang=True)
+            lang, value = PlywoodString.unindent(value, return_lang=True)
             self.lang = lang
         self.value = value
         super(PlywoodString, self).__init__(location)
@@ -162,10 +162,10 @@ class PlywoodString(PlywoodValue):
         return [Continue()], PlywoodWrapper(self.location, retval)
 
     @staticmethod
-    def unindent(value, lang=False):
+    def unindent(value, return_lang=False):
         indent = None
         lines = value.splitlines()
-        if lang:
+        if return_lang:
             lang = lines.pop(0)
         if lines[-1] == '':
             lines.pop()
@@ -188,7 +188,7 @@ class PlywoodString(PlywoodValue):
         if indent:
             lines = map(lambda line: line[len(indent):], lines)
             value = "\n".join(lines)
-        if lang:
+        if return_lang:
             return lang, value
         return value
 
@@ -207,7 +207,10 @@ class PlywoodString(PlywoodValue):
         consuming = False
         was_close_bracket = False
         inside = ''
-        runtime = PlywoodEnv({'separator': ' '})
+        if '__runtime' in scope:
+            runtime = scope['__runtime']
+        else:
+            runtime = PlywoodEnv({'separator': ' '})
         scope.push()
         context = scope.get('self', {})
         while index < len(original):
@@ -700,7 +703,10 @@ class PlywoodFunction(PlywoodCallable):
                 for item in arguments.kwargs
                 )
         if self.accepts_block:
-            inside = scope['__indent'](block.python_value(scope))
+            def inside(indent=False):
+                if indent:
+                    return scope['__indent'](block.python_value(scope))
+                return block.python_value(scope)
             retval = self.fn(inside, *args, **kwargs)
         else:
             retval = self.fn(*args, **kwargs)

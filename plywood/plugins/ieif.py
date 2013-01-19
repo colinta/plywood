@@ -5,4 +5,4 @@ from plywood.env import PlywoodEnv
 def ieif(block, condition):
     opener = '<!--[if {0}]>\n'.format(condition)
     closer = '\n<![endif]-->'
-    return opener + block + closer
+    return opener + block(indent=True) + closer

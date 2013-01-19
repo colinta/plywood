@@ -31,10 +31,11 @@ class PlywoodEnv(object):
         def indent_pop():
             return indent.pop()
 
-        def indent_apply(insides):
+        def indent_apply(insides, push_indent=True):
             if not insides:
                 return insides
-            indent_push()
+            if push_indent:
+                indent_push()
             current = indent[-1]
             retval = None
             for line in insides.splitlines():
@@ -44,7 +45,8 @@ class PlywoodEnv(object):
                     retval += "\n"
                 if line:
                     retval += current + line
-            indent_pop()
+            if push_indent:
+                indent_pop()
             return retval
 
         scope['__indent'] = indent_apply
