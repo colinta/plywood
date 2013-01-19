@@ -16,8 +16,8 @@ def test_def():
     input = '''
 def foo():
     'foo'
-foo        # there was a bug where this output a newline,
-foo()      # but this didn't
+foo        # there was a bug where this line output an extra newline
+foo()      # but this didn't.
 '''
     desired = '''foo
 foo
