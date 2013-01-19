@@ -12,7 +12,7 @@ class PlywoodEnv(object):
     FUNCTIONS = {}
     HTML_PLUGINS = {}
 
-    def __init__(self, options):
+    def __init__(self, options={}):
         self.options = options
         self.scope = scope = Scope()
 
