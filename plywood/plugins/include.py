@@ -33,14 +33,21 @@ def include(states, scope, arguments, block):
             context[key] = value
 
     template_name = arguments.args[0].python_value(scope)
-    template_path = os.path.join(scope['__path'], template_name) + '.ply'
-    retval = ''
-    with open(template_path) as f:
-        input = f.read()
-        scope.push()
-        scope['__input'] = input
-        retval = Plywood(input).run(context, scope['__runtime'])
-        scope.pop()
+    found = False
+    for path in scope['__paths']:
+        template_path = os.path.join(path, template_name) + '.ply'
+        if os.path.exists(template_path):
+            found = True
+            retval = ''
+            with open(template_path) as f:
+                input = f.read()
+                scope.push()
+                scope['__input'] = input
+                retval = Plywood(input).run(context, scope['__runtime'])
+                scope.pop()
+            break
+    if not found:
+        raise Exception('Could not find template: {0!r}'.format(template_name))
 
     if len(arguments.kwargs):
         for key, value in restore_scope.iteritems():
@@ -52,4 +59,9 @@ def include(states, scope, arguments, block):
 
 @PlywoodEnv.register_startup()
 def startup(plywood, scope):
-    scope['__path'] = plywood.options.get('path', os.getcwd())
+    if plywood.options.get('paths'):
+        scope['__paths'] = plywood.options.get('paths')
+    elif plywood.options.get('path'):
+        scope['__paths'] = [plywood.options.get('path')]
+    else:
+        scope['__paths'] = [os.getcwd()]
