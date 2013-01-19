@@ -146,10 +146,10 @@ re-inventing!
 LICENSE
 -------
 
-:Author: Colin Thomas-Arnold
-:Copyright: 2012 Colin Thomas-Arnold <http://colinta.com/>
+:Author: Colin T.A. Gray
+:Copyright: 2012 Colin T.A. Gray <http://colinta.com/>
 
-Copyright (c) 2012, Colin Thomas-Arnold
+Copyright (c) 2012, Colin T.A. Gray
 All rights reserved.
 
 See LICENSE_ for more details (it's a simplified BSD license).
