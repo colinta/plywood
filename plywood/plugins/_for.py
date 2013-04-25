@@ -34,6 +34,8 @@ def _for(states, scope, arguments, block):
     iterator = arguments.args[0].right.python_value(scope)
 
     retval = None
+    if not iterator:
+        return [Continue(), EmptyState(), ElseState()], ''
     for for_value in iterator:
         if retval is None:
             retval = ''

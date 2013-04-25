@@ -19,6 +19,8 @@ html:
       .row:
         for person in self.persons:
           .span6: person
+        empty:
+          .span6: 'NO ONE!'
 
     div.container:
       footer:

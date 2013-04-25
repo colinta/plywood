@@ -30,7 +30,10 @@ class Scope(object):
         try:
             return self.values.__getattribute__(attr)
         except AttributeError:
-            return self.values[attr]
+            try:
+                return self.values[attr]
+            except KeyError:
+                return None
 
     def __contains__(self, attr):
         return self.values.__contains__(attr)

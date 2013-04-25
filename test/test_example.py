@@ -2,15 +2,30 @@ from plywood import plywood
 from difflib import unified_diff
 
 
-input = open('test/example.ply').read()
-desired = open('test/example.html').read()
+def test_example_1():
+    input = open('test/example.ply').read()
+    desired = open('test/example_1.html').read()
 
-
-def test_example():
     vals = {
         'title': 'Welcome!',
         'keywords': 'plywood',
         'persons': ['Joey', 'Joe', 'Shabbadoo'],
+        }
+    actual = plywood(input, vals, indent='  ')
+    if actual != desired:
+        diff = unified_diff(desired.splitlines(), actual.splitlines())
+        print diff
+        for line in diff:
+            print line
+    assert desired == actual
+
+
+def test_example_2():
+    input = open('test/example.ply').read()
+    desired = open('test/example_2.html').read()
+
+    vals = {
+        'author': 'colin gray',
         }
     actual = plywood(input, vals, indent='  ')
     if actual != desired:
