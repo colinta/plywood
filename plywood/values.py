@@ -167,7 +167,7 @@ class PlywoodString(PlywoodValue):
         lines = value.splitlines()
         if return_lang:
             lang = lines.pop(0)
-        if lines[-1] == '':
+        if lines and lines[-1] == '':
             lines.pop()
 
         for line in lines:
