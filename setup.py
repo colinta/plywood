@@ -9,11 +9,11 @@ def read(fname):
 
 setup(
         name="plywood",
-        version="1.5.3",
+        version="1.5.4",
         author="Colin T.A. Gray",
         author_email="colinta@gmail.com",
         url="https://github.com/colinta/plywood",
-        install_requires=['chomsky'],
+        install_requires=['chomsky >= 1.0.2'],
 
         entry_points={
             'console_scripts': [
