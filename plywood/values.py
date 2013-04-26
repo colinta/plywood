@@ -61,6 +61,9 @@ class PlywoodBlock(PlywoodValue):
     def __str__(self):
         return '\n'.join(str(v) for v in self.lines)
 
+    def __unicode__(self):
+        return '\n'.join(unicode(v) for v in self.lines)
+
     def python_value(self, scope):
         states = [Continue()]
         return self.run(states, scope)[1].python_value(scope)
@@ -82,7 +85,7 @@ class PlywoodBlock(PlywoodValue):
                 else:
                     cmd_ret = cmd_ret.python_value(scope)
                     if cmd_ret is not None:
-                        retval += str(cmd_ret)
+                        retval += unicode(cmd_ret)
                         suppress_newline = SuppressNewline() in states or SuppressOneNewline() in states
                         if not self.inline and not suppress_newline:
                             retval += scope['__separator']
@@ -162,8 +165,10 @@ class PlywoodString(PlywoodValue):
     def unindent(value, return_lang=False):
         indent = None
         lines = value.splitlines()
-        if return_lang:
+        lang = ''
+        if return_lang and len(lines) > 1:
             lang = lines.pop(0)
+        # pop off the last line if it is empty
         if lines and lines[-1] == '':
             lines.pop()
 
@@ -184,7 +189,7 @@ class PlywoodString(PlywoodValue):
                 break
         if indent:
             lines = map(lambda line: line[len(indent):], lines)
-            value = "\n".join(lines)
+        value = "\n".join(lines)
         if return_lang:
             return lang, value
         return value
@@ -292,6 +297,9 @@ class PlywoodPythonValue(PlywoodValue):
     def __str__(self):
         return str(self.value)
 
+    def __unicode__(self):
+        return unicode(self.value)
+
 
 class PlywoodNumber(PlywoodValue):
     def __init__(self, location, value):
@@ -315,6 +323,9 @@ class PlywoodNumber(PlywoodValue):
 
     def __str__(self):
         return str(self.value)
+
+    def __unicode__(self):
+        return unicode(self.value)
 
 
 class PlywoodOperator(PlywoodValue):
@@ -404,6 +415,14 @@ class PlywoodOperator(PlywoodValue):
             op = ' ' + op + ' '
         return '{self.left}{op}{self.right}'.format(self=self, op=op)
 
+    def __unicode__(self):
+        op = unicode(self.operator)
+        if self.operator == '[]':
+            return '{self.left}[{self.right}]'.format(self=self)
+        if self.operator not in ['.']:
+            op = ' ' + op + ' '
+        return '{self.left}{op}{self.right}'.format(self=self, op=op)
+
 
 class PlywoodCallOperator(PlywoodOperator):
     def __init__(self, left, right, block=None):
@@ -437,6 +456,13 @@ class PlywoodCallOperator(PlywoodOperator):
         retval = '{indent}{self.left}{self.right}'.format(self=self, indent=indent)
         if self.block:
             retval += ':\n{indent}    {block}'.format(self=self, block=str(self.block).replace("\n", "\n    " + indent), indent=indent)
+        return retval
+
+    def __unicode__(self):
+        indent = ''
+        retval = '{indent}{self.left}{self.right}'.format(self=self, indent=indent)
+        if self.block:
+            retval += ':\n{indent}    {block}'.format(self=self, block=unicode(self.block).replace("\n", "\n    " + indent), indent=indent)
         return retval
 
 
@@ -518,6 +544,15 @@ class PlywoodParens(PlywoodValue):
             between = ', '
         return '(' + ', '.join(str(v) for v in self.args) + between + ', '.join(str(v) for v in self.kwargs) + extra + ')'
 
+    def __unicode__(self):
+        extra = ''
+        if self.is_set and len(self.args) == 1:
+            extra = ','
+        between = ''
+        if self.args and self.kwargs:
+            between = ', '
+        return '(' + ', '.join(unicode(v) for v in self.args) + between + ', '.join(unicode(v) for v in self.kwargs) + extra + ')'
+
 
 class PlywoodKvp(object):
     def __init__(self, key, value, kwarg=False):
@@ -541,6 +576,12 @@ class PlywoodKvp(object):
         else:
             return str(self.key) + self.separator + str(self.value)
 
+    def __unicode__(self):
+        if self.separator == '=':
+            return unicode(self.key)[1:-1] + self.separator + unicode(self.value)
+        else:
+            return unicode(self.key) + self.separator + unicode(self.value)
+
 
 class PlywoodList(PlywoodValue):
     def __init__(self, location, values, force_list=False):
@@ -559,6 +600,9 @@ class PlywoodList(PlywoodValue):
 
     def __str__(self):
         return '[' + ', '.join(str(v) for v in self.values) + ']'
+
+    def __unicode__(self):
+        return '[' + ', '.join(unicode(v) for v in self.values) + ']'
 
 
 class PlywoodXml(PlywoodValue):
@@ -593,6 +637,9 @@ class PlywoodXml(PlywoodValue):
     def __str__(self):
         return '<' + self.element + ' ' + ', '.join(str(v) for v in self.arguments) + '>'
 
+    def __unicode__(self):
+        return '<' + self.element + ' ' + ', '.join(unicode(v) for v in self.arguments) + '>'
+
 
 class PlywoodIndices(PlywoodValue):
     def __init__(self, location, values, force_list):
@@ -616,6 +663,9 @@ class PlywoodIndices(PlywoodValue):
 
     def __str__(self):
         return ', '.join(str(v) for v in self.values) + (self.force_list and ',' or '')
+
+    def __unicode__(self):
+        return ', '.join(unicode(v) for v in self.values) + (self.force_list and ',' or '')
 
 
 class PlywoodSlice(PlywoodValue):

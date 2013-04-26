@@ -5,6 +5,7 @@ those will be available in the scope of that template.
 import os
 
 from plywood import Plywood
+from plywood.values import PlywoodValue
 from plywood.exceptions import InvalidArguments
 from plywood.env import PlywoodEnv
 
@@ -19,7 +20,10 @@ def include(states, scope, arguments, block):
     scope.push()
     restore_scope = {}
     delete_scope = []
-    context = scope['self']
+    if isinstance(scope['self'], PlywoodValue):
+        context = scope['self'].python_value(scope)
+    else:
+        context = scope['self']
     if len(arguments.kwargs):
         kwargs = dict(
             (item.key.get_name(), item.value)

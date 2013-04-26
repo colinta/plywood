@@ -12,6 +12,7 @@ from grammar import (
     PlywoodOperatorGrammar,
     )
 from values import (
+    PlywoodValue,
     PlywoodOperator,
     PlywoodCallOperator,
     PlywoodUnaryOperator,
@@ -52,10 +53,6 @@ class Plywood(object):
     def run(self, context, runtime):
         parsed = self.compile()
         runtime.scope['__input'] = self.input
-        # self_context = type('Object', (object,), {})()
-        # for key, value in context.iteritems():
-        #     setattr(self_context, key, value)
-        # runtime.scope['self'] = self_context
         runtime.scope['self'] = Scope(context)
         return parsed.python_value(runtime.scope)
 

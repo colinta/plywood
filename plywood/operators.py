@@ -7,7 +7,11 @@ from plywood.runtime import Skip
 
 @PlywoodOperator.register('+')
 def plus(left, right, scope):
-    return left.python_value(scope) + right.python_value(scope)
+    left = left.python_value(scope)
+    right = right.python_value(scope)
+    if isinstance(left, basestring):
+        return left + (right and right or '')
+    return left + right
 
 
 @PlywoodOperator.register('-')

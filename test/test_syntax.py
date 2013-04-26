@@ -53,8 +53,47 @@ def test_comment_with_variable():
     assert_variable(test, 'foo')
 
 
-def test_string():
+def test_string_double():
     test = Plywood('"foo"').compile()[0]
+    assert_string(test, 'foo')
+
+
+def test_string_single():
+    test = Plywood("'foo'").compile()[0]
+    assert_string(test, 'foo')
+
+
+def test_string_triple_double():
+    test = Plywood('"""foo"""').compile()[0]
+    assert_string(test, 'foo')
+
+
+def test_string_triple_single():
+    test = Plywood("'''foo'''").compile()[0]
+    assert_string(test, 'foo')
+
+
+def test_string_triple_double_multiline():
+    test = Plywood('''"""
+foo"""''').compile()[0]
+    assert_string(test, 'foo')
+
+
+def test_string_triple_double_multiline_w_lang():
+    test = Plywood('''"""lang
+foo"""''').compile()[0]
+    assert_string(test, 'foo')
+
+
+def test_string_triple_single_multiline():
+    test = Plywood("""'''
+foo'''""").compile()[0]
+    assert_string(test, 'foo')
+
+
+def test_string_triple_single_multiline_w_lang():
+    test = Plywood("""'''lang
+foo'''""").compile()[0]
     assert_string(test, 'foo')
 
 
