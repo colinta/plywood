@@ -24,8 +24,8 @@ class ContinueException(Exception):
 
 
 def this_line(input, location):
-    newline_start = location
-    newline_end = location
+    newline_start = min(location, len(input))
+    newline_end = min(location, len(input))
     while newline_start >= 0:
         newline_start -= 1
         if input[newline_start] == "\n":

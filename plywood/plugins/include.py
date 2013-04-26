@@ -17,7 +17,6 @@ def include(states, scope, arguments, block):
     if len(block.lines):
         raise InvalidArguments('`include` does not accept a block')
 
-    scope.push()
     restore_scope = {}
     delete_scope = []
     if isinstance(scope['self'], PlywoodValue):
@@ -45,10 +44,9 @@ def include(states, scope, arguments, block):
             retval = ''
             with open(template_path) as f:
                 input = f.read()
-                scope.push()
+                # scope is not pushed/popped - `include` adds its variables to the local scope.
                 scope['__input'] = input
                 retval = Plywood(input).run(context, scope['__runtime'])
-                scope.pop()
             break
     if not found:
         raise Exception('Could not find template: {0!r}'.format(template_name))

@@ -51,4 +51,4 @@ class Scope(object):
             del self.values[key]
 
     def __repr__(self):
-        return "<{type} keys={keys!r}>".format(type=type(self), keys=self.values.keys())
+        return "<{type} keys={keys!r}>".format(type=type(self).__name__, keys=self.values.keys())

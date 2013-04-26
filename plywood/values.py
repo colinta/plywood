@@ -128,15 +128,16 @@ class PlywoodVariable(PlywoodValue):
     def get_value(self, scope):
         try:
             retval = scope[self.name]
-            if not isinstance(retval, PlywoodValue):
-                retval = PlywoodWrapper(self.location, retval)
-                scope[self.name] = retval
-            else:
-                retval.location = self.location
-            return retval
         except KeyError:
             line_no, line = this_line(scope['__input'], self.location)
             raise PlywoodKeyError(self.name, scope, scope['__input'])
+
+        if not isinstance(retval, PlywoodValue):
+            retval = PlywoodWrapper(self.location, retval)
+            scope[self.name] = retval
+        else:
+            retval.location = self.location
+        return retval
 
     def get_attr(self, attr, scope):
         return self.get_value(scope).get_attr(attr, scope)
