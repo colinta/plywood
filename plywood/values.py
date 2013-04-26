@@ -493,6 +493,9 @@ class PlywoodUnaryOperator(PlywoodValue):
     def get_value(self, scope):
         return self.handle(self, self.value, scope)
 
+    def python_value(self, scope):
+        return self.get_value(scope).python_value(scope)
+
     def __repr__(self):
         return '{type.__name__}({self.operator!r}, {self.value!r})'.format(type=type(self), self=self)
 
