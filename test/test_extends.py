@@ -25,7 +25,7 @@ get_block 'test2':
 
 
 def test_layout_not_extended():
-    input = '''include "test/layout"'''
+    input = '''include "test/examples/layout"'''
     desired = '''
 <nav><ul></ul></nav>
 '''[1:]
@@ -34,7 +34,7 @@ def test_layout_not_extended():
 
 def test_layout_extended_no_content():
     input = '''
-extends "test/layout"
+extends "test/examples/layout"
 '''[1:]
     desired = '''
 <nav><ul>

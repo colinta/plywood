@@ -9,7 +9,7 @@ class Scope(object):
         self.restore_scope = [{}]
         self.delete_scope = [[]]
 
-    def tracking(self, key):
+    def is_tracking(self, key):
         return key in self.delete_scope[-1] and key in self.restore_scope[-1]
 
     def track(self, key):
@@ -19,7 +19,7 @@ class Scope(object):
             self.delete_scope[-1].append(key)
 
     def __setitem__(self, key, value):
-        if not self.tracking(key):
+        if not self.is_tracking(key):
             self.track(key)
         self.values.__setitem__(key, value)
 
@@ -49,3 +49,6 @@ class Scope(object):
             self.values[key] = value
         for key in delete:
             del self.values[key]
+
+    def __repr__(self):
+        return "<{type} keys={keys!r}>".format(type=type(self), keys=self.values.keys())

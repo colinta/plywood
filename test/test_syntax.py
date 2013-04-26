@@ -13,7 +13,7 @@ from . import (
     assert_kvp,
     assert_block,
     assert_list,
-    assert_slice,
+    assert_indices,
     assert_parens,
     assert_dict,
     )
@@ -482,7 +482,7 @@ div['something'] = 'text'
     assert_operator(test[0], '=')
     assert_operator(test[0].left, '[]')
     assert_variable(test[0].left.left, 'div')
-    assert_slice(test[0].left.right, 1)
+    assert_indices(test[0].left.right, 1)
     assert_string(test[0].left.right[0], 'something')
     assert_string(test[0].right, 'text')
 
@@ -497,10 +497,10 @@ div['something']['else'] = 'text'
     assert_operator(test[0].left, '[]')
     assert_operator(test[0].left.left, '[]')
     assert_variable(test[0].left.left.left, 'div')
-    assert_slice(test[0].left.left.right, 1)
+    assert_indices(test[0].left.left.right, 1)
     assert_string(test[0].left.left.right[0], 'something')
 
-    assert_slice(test[0].left.right, 1)
+    assert_indices(test[0].left.right, 1)
     assert_string(test[0].left.right[0], 'else')
     assert_string(test[0].right, 'text')
 
@@ -511,15 +511,14 @@ div['item'].attr['attritem'] = 'text'
 ''').compile()
 
     assert_block(test, 1)
-    print test[0]
     assert_operator(test[0], '=')
     assert_operator(test[0].left, '[]')
     assert_operator(test[0].left.left, '.')
     assert_operator(test[0].left.left.left, '[]')
     assert_variable(test[0].left.left.left.left, 'div')
-    assert_slice(test[0].left.left.left.right, 1)
+    assert_indices(test[0].left.left.left.right, 1)
     assert_string(test[0].left.left.left.right.values[0], 'item')
-    assert_slice(test[0].left.right, 1)
+    assert_indices(test[0].left.right, 1)
     assert_string(test[0].left.right[0], 'attritem')
     assert_string(test[0].right, 'text')
 

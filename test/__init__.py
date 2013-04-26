@@ -60,7 +60,7 @@ def assert_list(test, value_count=None):
     assert len(test.values) == value_count
 
 
-def assert_slice(test, value_count=None):
+def assert_indices(test, value_count=None):
     assert isinstance(test, PlywoodIndices)
     assert len(test.values) == value_count
 

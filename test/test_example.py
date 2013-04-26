@@ -3,8 +3,8 @@ from difflib import unified_diff
 
 
 def test_example_1():
-    input = open('test/example.ply').read()
-    desired = open('test/example_1.html').read()
+    input = open('test/examples/example.ply').read()
+    desired = open('test/examples/example_1.html').read()
 
     vals = {
         'title': 'Welcome!',
@@ -21,8 +21,8 @@ def test_example_1():
 
 
 def test_example_2():
-    input = open('test/example.ply').read()
-    desired = open('test/example_2.html').read()
+    input = open('test/examples/example.ply').read()
+    desired = open('test/examples/example_2.html').read()
 
     vals = {
         'author': 'colin gray',

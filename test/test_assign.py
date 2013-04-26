@@ -20,6 +20,32 @@ test2
     assert_output(input, desired)
 
 
+def test_setattr():
+    class Dummy():
+        pass
+    dummy = Dummy()
+    dummy.property = 'old value'
+    input = '''
+self.dummy.property
+self.dummy.property = 'new value'
+self.dummy.property
+'''
+    desired = 'old value\nnew value\n'
+    assert_output(input, desired, {'dummy': dummy})
+
+
+def test_setitem():
+    dummy = {}
+    dummy['property'] = 'old value'
+    input = '''
+self.dummy["property"]
+self.dummy["property"] = 'new value'
+self.dummy["property"]
+'''
+    desired = 'old value\nnew value\n'
+    assert_output(input, desired, {'dummy': dummy})
+
+
 def test_plus_assign():
     input = '''
 test = 3

@@ -43,6 +43,7 @@ def _for(states, scope, arguments, block):
             varname = var.get_name()
             scope[varname] = for_value
         elif isinstance(var, PlywoodParens):
+            raise Exception('huh?')
             # for_values should be a PlywoodList, PlywoodDict,
             # if len(var.arguments) !=
             # scope[]

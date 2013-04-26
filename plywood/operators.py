@@ -112,14 +112,22 @@ def modulo(left, right, scope):
     return left.python_value(scope) % right.python_value(scope)
 
 
-@PlywoodOperator.register('[]')
+def item_setter(self, right, value, scope):
+    self.left.get_value(scope).set_item(self.right, value, scope)
+
+
+@PlywoodOperator.register('[]', setter=item_setter)
 def get_item(left, right, scope):
-    return left.get_item(scope, right)
+    return left.get_item(right, scope)
 
 
-@PlywoodOperator.register('.')
+def attr_setter(self, right, value, scope):
+    self.left.get_value(scope).set_attr(self.right, value, scope)
+
+
+@PlywoodOperator.register('.', setter=attr_setter)
 def get_attr(left, right, scope):
-    return left.get_attr(scope, right)
+    return left.get_attr(right, scope)
 
 
 @PlywoodUnaryOperator.register('.')
@@ -144,7 +152,7 @@ def not_(value, scope):
 
 @PlywoodOperator.register('=', state=Skip())
 def assign(left, right, scope):
-    scope[left.get_name()] = right.get_value(scope)
+    left.set_attr(right, right.get_value(scope), scope)
     return right
 
 

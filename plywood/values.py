@@ -8,25 +8,25 @@ class PlywoodValue(object):
     def __init__(self, location):
         self.location = location
 
-    def get_attr(self, scope, right):
-        raise Exception("{self!r} has no property {right!r}".format(self=self, right=right))
+    def get_attr(self, attr, scope):
+        raise Exception("{self!r} has no property {attr!r}".format(self=self, attr=attr))
 
     def plywood_value(self):
         return self
 
     def python_value(self, scope):
-        raise NotImplemented
+        raise NotImplementedError
 
     def get_value(self, scope):
         return self
 
     def call(self, states, scope, arguments, block):
         if len(block.lines):
-            raise InvalidArguments('`str` does not support block argument')
+            raise InvalidArguments('{0!s} does not support block argument'.format(self))
         if len(arguments.args) != 1 \
             or len(arguments.kwargs):
-            raise InvalidArguments('`str` only accepts one conditional argument')
-        retval = self.python_value(scope) + arguments.args[0].python_value(scope)
+            raise InvalidArguments('{0!s} only accepts one conditional argument'.format(self))
+        retval = unicode(self.python_value(scope)) + unicode(arguments.args[0].python_value(scope))
         return [Continue()], PlywoodWrapper(self.location, retval)
 
     def run(self, states, scope):
@@ -113,6 +113,12 @@ class PlywoodVariable(PlywoodValue):
     def get_name(self):
         return self.name
 
+    def set_attr(self, attr, value, scope):
+        scope[self.name] = value
+
+    def set_item(self, attr, value, scope):
+        scope[self.name] = value
+
     def python_value(self, scope):
         return self.get_value(scope).python_value(scope)
 
@@ -129,8 +135,8 @@ class PlywoodVariable(PlywoodValue):
             line_no, line = this_line(scope['__input'], self.location)
             raise PlywoodKeyError(self.name, scope, scope['__input'])
 
-    def get_attr(self, scope, right):
-        return self.get_value(scope).get_attr(scope, right)
+    def get_attr(self, attr, scope):
+        return self.get_value(scope).get_attr(attr, scope)
 
     def __eq__(self, other):
         return isinstance(other, PlywoodVariable) and other.name == self.name
@@ -151,15 +157,6 @@ class PlywoodString(PlywoodValue):
             self.lang = lang
         self.value = value
         super(PlywoodString, self).__init__(location)
-
-    def call(self, states, scope, arguments, block):
-        if len(block.lines):
-            raise InvalidArguments('`str` does not support block argument')
-        if len(arguments.args) != 1 \
-            or len(arguments.kwargs):
-            raise InvalidArguments('`str` only accepts one conditional argument')
-        retval = unicode(self.python_value(scope)) + unicode(arguments.args[0].python_value(scope))
-        return [Continue()], PlywoodWrapper(self.location, retval)
 
     @staticmethod
     def unindent(value, return_lang=False):
@@ -262,13 +259,32 @@ class PlywoodString(PlywoodValue):
 class PlywoodPythonValue(PlywoodValue):
     def __init__(self, location, value):
         self.value = value
+        if callable(value):
+            raise Exception('hey now')
         super(PlywoodPythonValue, self).__init__(location)
 
     def python_value(self, scope):
         return self.value
 
-    def get_attr(self, scope, right):
-        return getattr(self.python_value(scope), right.get_name())
+    def set_attr(self, attr, value, scope):
+        setattr(self.value, attr.get_name(), value.python_value(scope))
+
+    def get_attr(self, attr, scope):
+        val = self.python_value(scope)
+        attr = attr.get_name()
+        if hasattr(val, attr):
+            return getattr(val, attr)
+        return None
+
+    def set_item(self, attr, value, scope):
+        self.value[attr.get_name()] = value.python_value(scope)
+
+    def get_item(self, attr, scope):
+        val = self.python_value(scope)
+        key = attr.get_name()
+        if key in val:
+            return val[key]
+        return None
 
     def __repr__(self):
         return '{type.__name__}({self.value!r})'.format(type=type(self), self=self)
@@ -284,10 +300,10 @@ class PlywoodNumber(PlywoodValue):
 
     def call(self, states, scope, arguments, block):
         if len(block.lines):
-            raise InvalidArguments('`str` does not support block argument')
+            raise InvalidArguments('{0!s} does not support block argument'.format(self))
         if len(arguments.args) != 1 \
             or len(arguments.kwargs):
-            raise InvalidArguments('`str` only accepts one conditional argument')
+            raise InvalidArguments('{0!s} only accepts one conditional argument'.format(self))
         retval = self.python_value(scope) * arguments.args[0].python_value(scope)
         return [Continue()], PlywoodWrapper(self.location, retval)
 
@@ -344,8 +360,34 @@ class PlywoodOperator(PlywoodValue):
     def python_value(self, scope):
         return self.get_value(scope).python_value(scope)
 
-    def get_attr(self, scope, right):
-        return self.get_value(scope).get_attr(scope, right)
+    def get_attr(self, attr, scope):
+        return self.handle(self.operator, self.left, self.right, scope).get_attr(attr, scope)
+
+    def get_item(self, attr, scope):
+        target = self.handle(self.operator, self.left, self.right, scope)
+        return target.get_item(attr, scope)
+
+    def set_attr(self, attr, value, scope):
+        try:
+            handler, kwargs = self.OPERATORS[self.operator]
+        except KeyError:
+            raise Exception('No operator handler for {operator!r}'.format(operator=self.operator))
+        try:
+            setter = kwargs['setter']
+        except KeyError:
+            raise Exception('Operator {operator!r} cannot set values'.format(operator=self.operator))
+        return setter(self, attr, value, scope)
+
+    def set_item(self, attr, value, scope):
+        try:
+            handler, kwargs = self.OPERATORS[self.operator]
+        except KeyError:
+            raise Exception('No operator handler for {operator!r}'.format(operator=self.operator))
+        try:
+            setter = kwargs['setter']
+        except KeyError:
+            raise Exception('Operator {operator!r} cannot set values'.format(operator=self.operator))
+        return setter(self, attr, value, scope)
 
     def __repr__(self):
         indent = type(self).INDENT
@@ -558,6 +600,14 @@ class PlywoodIndices(PlywoodValue):
         self.force_list = force_list
         super(PlywoodIndices, self).__init__(location)
 
+    def python_value(self, scope):
+        if self.force_list:
+            return [value.python_value(scope) for value in self.values]
+        return self.values[0].python_value(scope)
+
+    def get_name(self):
+        return self.values[0].get_name()
+
     def __getitem__(self, key):
         return self.values.__getitem__(key)
 
@@ -574,6 +624,9 @@ class PlywoodSlice(PlywoodValue):
         self.stop = stop
         super(PlywoodSlice, self).__init__(self.start.location)
 
+    def python_value(self, scope):
+        raise NotImplementedError
+
     def __repr__(self):
         return type(self).__name__ + '({self.start!r}:{self.stop!r})'.format(self=self)
 
@@ -589,33 +642,36 @@ class PlywoodDict(PlywoodValue):
     def python_value(self, scope):
         return dict((kvp.key.python_value(scope), kvp.value.python_value(scope)) for kvp in self.values)
 
-    def get_item(self, scope, right):
-        key = right.python_value(scope)
+    def set_item(self, attr, value, scope):
+        key = attr.python_value(scope)
+        for kvp in self.values:
+            if kvp.key.python_value(scope) == key:
+                kvp.value = value
+                return
+        raise KeyError(key)
+
+    def get_item(self, attr, scope):
+        key = attr.python_value(scope)
         for kvp in self.values:
             if kvp.key.python_value(scope) == key:
                 return kvp.value
         raise KeyError(key)
 
-    def get_attr(self, scope, right):
-        key = right.get_name()
+    def get_attr(self, attr, scope):
+        key = attr.get_name()
         for kvp in self.values:
             if kvp.key.python_value(scope) == key:
                 return kvp.value
         raise KeyError(key)
-        # if not isinstance(src, PlywoodValue):
-        #     key = right.get_name()
-        #     if hasattr(src, key):
-        #         return getattr(src, key)
-        #     else:
-        #         return src[key]
-        # else:
-        #     return src.get_attr(scope, right)
 
     def __repr__(self):
         return type(self).__name__ + '{' + ', '.join(repr(v) for v in self.values) + '}'
 
     def __str__(self):
-        return '{' + ', '.join(repr(v) for v in self.values) + '}'
+        return '{' + ', '.join(str(v) for v in self.values) + '}'
+
+    def __unicode__(self):
+        return '{' + ', '.join(unicode(v) for v in self.values) + '}'
 
 
 class PlywoodCallable(PlywoodValue):
@@ -685,9 +741,9 @@ class PlywoodHtmlPlugin(PlywoodCallable):
             copy.location = self.location
         return copy
 
-    def get_attr(self, scope, right):
+    def get_attr(self, attr, scope):
         copy = self.copy()
-        copy.classes.append(right.get_name())
+        copy.classes.append(attr.get_name())
         return copy
 
 
@@ -726,15 +782,6 @@ def PlywoodWrapper(location, value):
         return PlywoodString(location, value)
     if isinstance(value, int) or isinstance(value, long) or isinstance(value, float):
         return PlywoodNumber(location, value)
-    if isinstance(value, list):
-        return PlywoodList(location, value)
-    if isinstance(value, dict):
-        values = []
-        for key, value in value.iteritems():
-            key = PlywoodWrapper(location, key)
-            value = PlywoodWrapper(location, value)
-            values.append(PlywoodKvp(key, value))
-        return PlywoodDict(location, values)
     if callable(value):
         retval = PlywoodFunction(value)
         retval.location = location
