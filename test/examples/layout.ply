@@ -6,3 +6,4 @@ nav: ul:
     for link in links:
       print link
       li: a href=link.href: link.title
+yield

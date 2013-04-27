@@ -44,6 +44,20 @@ extends "test/examples/layout"
     assert_output(input, desired)
 
 
+def test_layout_extended_with_content():
+    input = '''
+extends "test/examples/layout":
+    h1: 'this post is great!'
+'''[1:]
+    desired = '''
+<nav><ul>
+    <li><a href="/link-one">Link One</a></li>
+</ul></nav>
+<h1>this post is great!</h1>
+'''[1:]
+    assert_output(input, desired)
+
+
 def test_layout_extended_locals():
     input = '''
 extends "test/examples/layout"
