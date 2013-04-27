@@ -26,5 +26,5 @@ def test_dict_getattr():
     input = '''
 self.dummy.property
 '''
-    desired = ''
+    desired = 'value\n'
     assert_output(input, desired, {'dummy': dummy})

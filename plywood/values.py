@@ -290,6 +290,10 @@ class PlywoodPythonValue(PlywoodValue):
         attr = attr.get_name()
         if hasattr(val, attr):
             return getattr(val, attr)
+        try:
+            return val[attr]
+        except (KeyError, TypeError):
+            pass
         return None
 
     def set_item(self, attr, value, scope):

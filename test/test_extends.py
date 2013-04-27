@@ -42,3 +42,15 @@ extends "test/examples/layout"
 </ul></nav>
 '''[1:]
     assert_output(input, desired)
+
+
+def test_layout_extended_locals():
+    input = '''
+extends "test/examples/layout"
+'''[1:]
+    desired = '''
+<nav><ul>
+    <li><a href="/">Home</a></li>
+</ul></nav>
+'''[1:]
+    assert_output(input, desired, {'links': [{'href': '/', 'title': 'Home'}]})

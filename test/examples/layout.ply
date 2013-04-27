@@ -1,6 +1,8 @@
 nav: ul:
   block 'nav':
-    links = [{'href':'/link-one','title':'Link One'}]
+    links = self.links or [{'href':'/link-one','title':'Link One'}]
     print links
+    print self.links
     for link in links:
+      print link
       li: a href=link.href: link.title
