@@ -1,8 +1,10 @@
 from __future__ import division
 from plywood import (
     PlywoodOperator, PlywoodUnaryOperator, PlywoodVariable,
+    PlywoodParens, PlywoodBlock, PlywoodCallOperator,
     )
 from plywood.runtime import Skip
+from plywood.runtime import Continue
 
 
 @PlywoodOperator.register('+')
@@ -59,9 +61,9 @@ def less_than(left, right, scope):
     return left.python_value(scope) < right.python_value(scope)
 
 
-@PlywoodOperator.register('<')
+@PlywoodOperator.register('>')
 def greater_than(left, right, scope):
-    return left.python_value(scope) < right.python_value(scope)
+    return left.python_value(scope) > right.python_value(scope)
 
 
 @PlywoodOperator.register('>=')
@@ -91,24 +93,19 @@ def boolean_or(left, right, scope):
     return left.python_value(scope) or right.python_value(scope)
 
 
-@PlywoodOperator.register('&')
-def binary_and(left, right, scope):
-    return left.python_value(scope) & right.python_value(scope)
-
-
+# 'test' | date => date('test')
+# '<test>' | escape | json  # => json(escape('<test>'))
 @PlywoodOperator.register('|')
 def binary_or(left, right, scope):
-    return left.python_value(scope) | right.python_value(scope)
-
-
-@PlywoodOperator.register('<<')
-def bitshift_left(left, right, scope):
-    return left.python_value(scope) << right.python_value(scope)
-
-
-@PlywoodOperator.register('>>')
-def bitshift_right(left, right, scope):
-    return left.python_value(scope) >> right.python_value(scope)
+    if isinstance(right, PlywoodCallOperator):
+        right.right.args.insert(0, left.get_value(scope))
+        arguments = right.right
+        _, retval = right.run([Continue()], scope)
+    else:
+        arguments = PlywoodParens(right.location, [left])
+        block = PlywoodBlock(right.location, [])
+        _, retval = right.call([Continue()], scope, arguments, block)
+    return retval
 
 
 @PlywoodOperator.register('%')
@@ -142,11 +139,6 @@ def unary_get_attr(value, scope):
 @PlywoodUnaryOperator.register('-')
 def negate(value, scope):
     return - value.python_value(scope)
-
-
-@PlywoodUnaryOperator.register('~')
-def invert(value, scope):
-    return ~ value.python_value(scope)
 
 
 @PlywoodUnaryOperator.register('not')
@@ -199,25 +191,6 @@ def int_divide_assign(left, right, scope):
 @PlywoodOperator.register('%=', state=Skip())
 def modulo_assign(left, right, scope):
     value = PlywoodOperator.handle('%', left, right, scope)
-    return PlywoodOperator.handle('=', left, value, scope)
-
-
-@PlywoodOperator.register('.=', state=Skip())
-def call_assign(left, right, scope):
-    left = left.get_value(scope)
-    left = scope[left.get_name()].get_attr(right)
-    return PlywoodOperator.handle('=', left, right, scope)
-
-
-@PlywoodOperator.register('|=', state=Skip())
-def bitwise_or_assign(left, right, scope):
-    value = PlywoodOperator.handle('|', left, right, scope)
-    return PlywoodOperator.handle('=', left, value, scope)
-
-
-@PlywoodOperator.register('&=', state=Skip())
-def bitwise_and_assign(left, right, scope):
-    value = PlywoodOperator.handle('&', left, right, scope)
     return PlywoodOperator.handle('=', left, value, scope)
 
 

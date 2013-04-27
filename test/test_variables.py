@@ -1,7 +1,8 @@
 from . import assert_output
 
 
-def test_cdata():
-    input = 'self.andand\nself.is_safe'
-    desired = 'andand\nTrue\n'
-    assert_output(input, desired, {'andand': 'andand', 'is_safe': 'True'})
+# these variables were giving me trouble because 'is' and 'and' are operators
+def test_variables():
+    input = 'andand\nis_safe\nnota'
+    desired = 'andand\nTrue\nisa\n'
+    assert_output(input, desired, globals={'andand': 'andand', 'is_safe': 'True', 'nota': 'isa'})

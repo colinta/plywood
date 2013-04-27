@@ -34,13 +34,43 @@ self.dummy.property
     assert_output(input, desired, {'dummy': dummy})
 
 
+def test_setattr_nested():
+    class Dummy(object):
+        pass
+    dummy = Dummy()
+    nested = Dummy()
+    nested.property = 'old value'
+    dummy.nested = nested
+    input = '''
+self.dummy.nested.property
+self.dummy.nested.property = 'new value'
+self.dummy.nested.property
+'''
+    desired = 'old value\nnew value\n'
+    assert_output(input, desired, {'dummy': dummy})
+
+
 def test_setitem():
-    dummy = {}
-    dummy['property'] = 'old value'
+    dummy = {
+        'property': 'old value',
+    }
     input = '''
 self.dummy["property"]
 self.dummy["property"] = 'new value'
 self.dummy["property"]
+'''
+    desired = 'old value\nnew value\n'
+    assert_output(input, desired, {'dummy': dummy})
+
+
+def test_setitem_nested():
+    dummy = {
+        'nested': {'property': 'old value'},
+    }
+    input = '''
+self.dummy['nested']['property']
+self.dummy['nested']['property'] = 'new value'
+self.dummy['nested']['property']
 '''
     desired = 'old value\nnew value\n'
     assert_output(input, desired, {'dummy': dummy})
@@ -116,41 +146,27 @@ test
     assert_output(input, desired)
 
 
-def test_bitwise_or_assign():
-    input = '''
-test = 3
-test |= 9
-test
-'''
-    desired = '11\n'
-    assert_output(input, desired)
-
-
-def test_bitwise_and_assign():
-    input = '''
-test = 13
-test &= 11
-test
-'''
-    desired = '9\n'
-    assert_output(input, desired)
-
-
 def test_boolean_or_assign():
     input = '''
-test = False
-test or= 10
-test
+test1 = 20
+test1 or= 10
+test2 = False
+test2 or= 10
+test1
+test2
 '''
-    desired = '10\n'
+    desired = '20\n10\n'
     assert_output(input, desired)
 
 
 def test_boolean_and_assign():
     input = '''
-test = True
-test and= 11
-test
+test1 = 0
+test1 and= 11
+test2 = True
+test2 and= 11
+test1
+test2
 '''
-    desired = '11\n'
+    desired = '0\n11\n'
     assert_output(input, desired)

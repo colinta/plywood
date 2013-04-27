@@ -88,7 +88,7 @@ class PlywoodBlock(PlywoodValue):
                         retval += unicode(cmd_ret)
                         suppress_newline = SuppressNewline() in states or SuppressOneNewline() in states
                         if not self.inline and not suppress_newline:
-                            retval += scope['__separator']
+                            retval += scope['__runtime'].options['separator']
                         try:
                             states.remove(SuppressOneNewline())
                         except ValueError:
@@ -112,6 +112,9 @@ class PlywoodVariable(PlywoodValue):
 
     def run(self, states, scope):
         return self.get_value(scope).run(states, scope)
+
+    def call(self, states, scope, arguments, block):
+        return self.get_value(scope).call(states, scope, arguments, block)
 
     def get_name(self):
         return self.name
@@ -142,6 +145,9 @@ class PlywoodVariable(PlywoodValue):
     def get_attr(self, attr, scope):
         return self.get_value(scope).get_attr(attr, scope)
 
+    def get_item(self, attr, scope):
+        return self.get_value(scope).get_item(attr, scope)
+
     def __eq__(self, other):
         return isinstance(other, PlywoodVariable) and other.name == self.name
 
@@ -149,6 +155,10 @@ class PlywoodVariable(PlywoodValue):
         return '{type.__name__}({self.name})'.format(type=type(self), self=self)
 
     __str__ = lambda self: self.name
+
+
+class uni(unicode):
+    pass
 
 
 class PlywoodString(PlywoodValue):
@@ -159,7 +169,7 @@ class PlywoodString(PlywoodValue):
             # unindent
             lang, value = PlywoodString.unindent(value, return_lang=True)
             self.lang = lang
-        self.value = value
+        self.value = uni(value)
         super(PlywoodString, self).__init__(location)
 
     @staticmethod
@@ -287,7 +297,7 @@ class PlywoodPythonValue(PlywoodValue):
 
     def get_item(self, attr, scope):
         val = self.python_value(scope)
-        key = attr.get_name()
+        key = attr.python_value(scope)
         if key in val:
             return val[key]
         return None
@@ -437,6 +447,9 @@ class PlywoodCallOperator(PlywoodOperator):
             return self.left.get_value(scope).call(states, scope, self.right, self.block)
         else:
             raise Exception(''.join(states))
+
+    def call(self, states, scope, arguments, block):
+        return self.left.get_value(scope).run(states, scope)
 
     def get_value(self, scope):
         return self.run([Continue()], scope)[1]
@@ -815,7 +828,7 @@ class PlywoodFunction(PlywoodCallable):
         if self.accepts_block:
             def inside(indent=False):
                 if indent:
-                    return scope['__indent'](block.python_value(scope))
+                    return scope['__runtime'].indent(block.python_value(scope))
                 return block.python_value(scope)
             retval = self.fn(inside, *args, **kwargs)
         else:

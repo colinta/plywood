@@ -63,9 +63,9 @@ class PlywoodOperatorGrammar(chomsky.Grammar):
     grammar = chomsky.Any(
         '==', '!=', '<=', '>=', '<', '>',
         '**=', '//=', '+=', '-=', '/=', '*=', '%=', '.=', '=',
-        'and=', 'or=', '&=', '|=',
-        '&', '|', '~', '<<', '>>',
+        'and=', 'or=',
         '**',  '//',  '+',  '-',  '/',  '*',  '%',
+        '|',  # pipe
         '.',  # get_attr
         ',',  # auto arg
         (chomsky.WordStart(string.letters + '_') + chomsky.Any('is', 'in', 'not', 'and', 'or') + chomsky.WordEnd(string.letters + '_')),

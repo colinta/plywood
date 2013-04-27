@@ -15,10 +15,11 @@ class PlywoodEnv(object):
     def __init__(self, options={}):
         self.options = options
         self.scope = scope = Scope()
+        scope.update(self.GLOBAL)
 
         scope['__runtime'] = self
-        scope['__separator'] = options.get('separator', "\n")
-        options = self.options
+        options.setdefault('separator', "\n")
+
         add_indent = options.get('indent', '    ')
         indent = ['']
         for startup in self.STARTUP:
@@ -49,8 +50,8 @@ class PlywoodEnv(object):
                 indent_pop()
             return retval
 
+        self.indent = indent_apply
         scope['__indent'] = indent_apply
-        scope.update(self.GLOBAL)
 
         include_defaults = options.get('defaults', True)
         if include_defaults:
@@ -67,8 +68,11 @@ class PlywoodEnv(object):
                 value = PlywoodHtmlPlugin(fn, **kwargs)
                 scope[key] = value
 
+        more_globals = options.get('globals', {})
+        scope.update(more_globals)
+
     @classmethod
-    def register(cls, name, value):
+    def register_global(cls, name, value):
         cls.GLOBAL[name] = value
 
     @classmethod

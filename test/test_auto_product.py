@@ -7,6 +7,5 @@ three = 3
 six = 2 three
 six
 '''
-    desired = '''6
-'''
+    desired = '6\n'
     assert_output(input, desired)

@@ -205,10 +205,22 @@ def test_add_mult_precedence():
 
 
 def test_unary_precedence():
-    test = Plywood('-~bar').compile()[0]
+    test = Plywood('- not bar').compile()[0]
     assert_unary(test, '-')
-    assert_unary(test.value, '~')
+    assert_unary(test.value, 'not')
     assert_variable(test.value.value, 'bar')
+
+
+def test_pipe_precedence():
+    test = Plywood('"str" + foo | fn("test") + "str"').compile()[0]
+    assert_operator(test, '+')
+    assert_string(test.right, 'str')
+    assert_operator(test.left, '+')
+    assert_string(test.left.left, 'str')
+    assert_operator(test.left.right, '|')
+    assert_variable(test.left.right.left, 'foo')
+    assert_operator(test.left.right.right, '()')
+    # assert_variable(test.left.right.right, 'fn')
 
 
 def test_precedence():
@@ -245,22 +257,22 @@ def test_precedence():
     assert_number(test.right.left, 3)
     assert_number(test.right.right, 4)
 
-    test = Plywood('-foo + ~bar').compile()[0]
+    test = Plywood('-foo + - bar').compile()[0]
     assert_operator(test, '+')
     assert_unary(test.left, '-')
     assert_variable(test.left.value, 'foo')
-    assert_unary(test.right, '~')
+    assert_unary(test.right, '-')
     assert_variable(test.right.value, 'bar')
 
 
 def test_parens():
-    test = Plywood('(-foo + ~bar)').compile()[0]
+    test = Plywood('(-foo + -bar)').compile()[0]
     assert_parens(test, 1)
 
     assert_operator(test.args[0], '+')
     assert_unary(test.args[0].left, '-')
     assert_variable(test.args[0].left.value, 'foo')
-    assert_unary(test.args[0].right, '~')
+    assert_unary(test.args[0].right, '-')
     assert_variable(test.args[0].right.value, 'bar')
 
 

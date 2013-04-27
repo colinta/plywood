@@ -1,6 +1,6 @@
 from plywood.env import PlywoodEnv
 
 
-PlywoodEnv.register('None', None)
-PlywoodEnv.register('False', False)
-PlywoodEnv.register('True', True)
+PlywoodEnv.register_global('None', None)
+PlywoodEnv.register_global('False', False)
+PlywoodEnv.register_global('True', True)
