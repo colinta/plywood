@@ -18,3 +18,9 @@ def test_cdata():
     input = 'cdata("content")'
     desired = '<![CDATA[content]]>\n'
     assert_output(input, desired)
+
+
+def test_e():
+    input = 'e("<>&“”")'
+    desired = '&lt;&gt;&amp;&ldquo;&rdquo;\n'
+    assert_output(input, desired)
