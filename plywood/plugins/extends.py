@@ -22,9 +22,9 @@ Example::
     # layout.ply
     html:
         head:
-            block 'head'  # this is a get_block request
+            block 'head'  # this will be a get_block request
             block 'extrahead':
-                'default content, which will be ignored'
+                'default content, which can be ignored'
         body:
             yield
 
@@ -96,17 +96,16 @@ def extends(states, scope, arguments, block):
     if len(arguments.args) != 1:
         raise InvalidArguments('`extends` only accepts one argument')
 
-    old_yield = scope.get('__yield')
+    scope.push()
     yield_content = block.get_value(scope)  # executes the body, to define blocks
     scope['__yield'] = yield_content  # makes the extends body available to the yield method
 
-    old_block = scope['block']
+    # inside the extended layout, block => get_block
     scope['block'] = scope['get_block']
 
     # include the layout
     states, retval = include(states, scope, arguments, PlywoodBlock(block.location, []))
-    scope['block'] = old_block
-    scope['__yield'] = old_yield
+    scope.pop()
     return states, retval
 
 
@@ -117,8 +116,7 @@ def define_block(states, scope, arguments, block):
     if len(arguments.args) != 1 or len(arguments.kwargs):
         raise InvalidArguments('`block` only accepts one argument')
     block_name = arguments.args[0].python_value(scope)
-    if block_name not in scope['__blocks']:
-        scope['__blocks'][block_name] = block
+    scope['__blocks'][block_name] = block
     return states, ''
 
 
@@ -129,9 +127,19 @@ def get_block(states, scope, arguments, block):
     if len(arguments.args) != 1 or len(arguments.kwargs):
         raise InvalidArguments('`get_block` only accepts one argument')
     # if a block is defined, it will be stored as the default
-    define_block(states, scope, arguments, block)
     block_name = arguments.args[0].python_value(scope)
-    return states, scope['__blocks'][block_name].get_value(scope)
+    if block.lines:
+        if block_name in scope['__blocks']:
+            scope.push()
+            scope['super'] = block.get_value(scope)
+            scope['super'].suppress_nl = True
+            retval = scope['__blocks'][block_name].get_value(scope)
+            scope.pop()
+        else:
+            retval = block.get_value(scope)
+    else:
+        retval = scope['__blocks'][block_name].get_value(scope)
+    return states, retval
 
 
 @PlywoodEnv.register_runtime('yield')

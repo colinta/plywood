@@ -7,6 +7,7 @@ from element import output_element
 class PlywoodValue(object):
     def __init__(self, location):
         self.location = location
+        self.suppress_nl = False
 
     def get_attr(self, attr, scope):
         raise Exception("{self!r} has no property {attr!r}".format(self=self, attr=attr))
@@ -31,7 +32,9 @@ class PlywoodValue(object):
 
     def run(self, states, scope):
         if Continue() in states:
-            return [Continue()], self.get_value(scope)
+            if self.suppress_nl:
+                states.append(SuppressOneNewline())
+            return states, self.get_value(scope)
         else:
             raise Exception(''.join(states))
 

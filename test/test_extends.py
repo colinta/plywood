@@ -11,16 +11,28 @@ get_block 'test'
     assert_output(input, desired)
 
 
+def test_get_block_override_second():
+    input = '''
+block 'test':
+    'this is my test'
+block 'test':
+    'this is overridden'
+get_block 'test'
+'''
+    desired = 'this is overridden\n'
+    assert_output(input, desired)
+
+
 def test_get_block_default():
     input = '''
 block 'test1':
-    'this is test1'
+    'overrides'
 get_block 'test1':
-    'invisible'
+    'content'
 get_block 'test2':
     'visible'
 '''
-    desired = 'this is test1\nvisible\n'
+    desired = 'overrides\nvisible\n'
     assert_output(input, desired)
 
 
@@ -52,6 +64,24 @@ extends "test/examples/layout":
     desired = '''
 <nav><ul>
     <li><a href="/link-one">Link One</a></li>
+</ul></nav>
+<h1>this post is great!</h1>
+'''[1:]
+    assert_output(input, desired)
+
+
+def test_layout_extended_with_super():
+    input = '''
+extends "test/examples/layout":
+    block 'nav':
+        super
+        li: hr
+    h1: 'this post is great!'
+'''[1:]
+    desired = '''
+<nav><ul>
+    <li><a href="/link-one">Link One</a></li>
+    <li><hr /></li>
 </ul></nav>
 <h1>this post is great!</h1>
 '''[1:]
