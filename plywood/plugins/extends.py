@@ -137,8 +137,10 @@ def get_block(states, scope, arguments, block):
             scope.pop()
         else:
             retval = block.get_value(scope)
-    else:
+    elif block_name in scope['__blocks']:
         retval = scope['__blocks'][block_name].get_value(scope)
+    else:
+        retval = None
     return states, retval
 
 
