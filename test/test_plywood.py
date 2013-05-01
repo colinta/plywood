@@ -16,19 +16,27 @@ def test_html_with_content():
 
 
 def test_html_kwargs_plugin():
-    assert plywood('html foo="bar"') == "<html foo=\"bar\"></html>\n"
+    assert plywood('html foo="bar"') == '<html foo="bar"></html>\n'
 
 
 def test_html_args_plugin():
     assert plywood('html "is fun"') == "<html>is fun</html>\n"
 
 
-def test_html_kwargs_parens_plugin():
-    assert plywood('html(foo="bar")') == "<html foo=\"bar\"></html>\n"
-
-
-def test_html_args_parens_plugin():
+def test_html_args_parens():
     assert plywood('html("is neat!")') == "<html>is neat!</html>\n"
+
+
+def test_html_kwargs_parens():
+    assert plywood('html(foo="bar")') == '<html foo="bar"></html>\n'
+
+
+def test_html_kwargs_true():
+    assert plywood('html(foo=True)') == '<html foo="foo"></html>\n'
+
+
+def test_html_kwargs_false():
+    assert plywood('html(foo=False)') == "<html></html>\n"
 
 
 def test_nested_tags():
@@ -85,4 +93,12 @@ def test_class_shorthand():
 p.important: span.warning.gray: em: 'text'
 '''
     desired = '<p class="important"><span class="warning gray"><em>text</em></span></p>\n'
+    assert_output(input, desired)
+
+
+def test_class_shorthand_mixed():
+    input = '''
+p.really(class="important"): span.warning(class="gray"): em: 'text'
+'''
+    desired = '<p class="really important"><span class="warning gray"><em>text</em></span></p>\n'
     assert_output(input, desired)
