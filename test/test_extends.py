@@ -98,3 +98,25 @@ extends "test/examples/layout"
 </ul></nav>
 '''[1:]
     assert_output(input, desired, {'links': [{'href': '/', 'title': 'Home'}]})
+
+
+def test_layout_nested():
+    input = '''
+extends "test/examples/nested_layout":
+  # block 'nav':
+  #   li: 'outmost pre'
+  #   super
+  #   li: 'outmost post'
+  'neat!'
+'''[1:]
+    desired = '''
+<nav><ul>
+    <li>outmost pre</li>
+    <li>pre</li>
+    <li><a href="/link-one">Link One</a></li>
+    <li>post</li>
+    <li>outmost post</li>
+</ul></nav>
+neat!
+'''[1:]
+    assert_output(input, desired)

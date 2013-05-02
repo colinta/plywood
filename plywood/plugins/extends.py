@@ -136,6 +136,9 @@ def get_block(states, scope, arguments, block):
             retval = scope['__blocks'][block_name].get_value(scope)
             scope.pop()
         else:
+            print("""=============== extends.py at line {0} ===============
+block: {1!r}
+""".format(__import__('sys')._getframe().f_lineno - 2, block, ))
             retval = block.get_value(scope)
     elif block_name in scope['__blocks']:
         retval = scope['__blocks'][block_name].get_value(scope)

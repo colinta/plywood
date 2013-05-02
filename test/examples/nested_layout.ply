@@ -1,0 +1,5 @@
+extends 'test/examples/layout':
+  block 'nav':
+    li: 'pre'
+    super
+    li: 'post'
