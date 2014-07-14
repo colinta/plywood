@@ -14,7 +14,7 @@ html:
       meta name='keywords', content=self.keywords
 
   body:
-    div.container:
+    section.container:
       div id="page-header"
       .row:
         for person in self.persons:
@@ -22,7 +22,7 @@ html:
         empty:
           .span6: 'NO ONE!'
 
-    div.container:
+    section.container:
       footer:
         p "&copy; colinta.com " + date(now, '%Y')
 
