@@ -36,7 +36,7 @@ BLOCK_TAGS = [
     'optgroup',
     'p',
     'script',
-    'section'
+    'section',
     'select',
     'style',
     'summary',
