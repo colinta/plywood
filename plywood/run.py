@@ -420,10 +420,10 @@ class Plywood(object):
         self.consume('dict_open')
         prev_whitespace = self.whitespace
         self.whitespace = 'multiline_whitespace'
+        self.consume('whitespace')
 
         tokens = []
         while not self.test('dict_close'):
-            self.consume('whitespace')
             key = self.consume_until('colon_close_key')
             self.consume(':')
 
@@ -433,6 +433,7 @@ class Plywood(object):
             tokens.append(PlywoodKvp(key, value))
             if self.test(','):
                 self.consume(',')
+            self.consume('whitespace')
         self.consume('dict_close')
         self.whitespace = prev_whitespace
 

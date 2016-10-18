@@ -409,6 +409,31 @@ def test_dict():
     assert_variable(test.values[0].value, 'bar')
 
 
+def test_multiline_dict():
+    test = Plywood('{\n  "foo": bar,\n  "quux": 0}').compile()[0]
+    assert_dict(test, 2)
+    assert_kvp(test.values[0], 'foo')
+    assert_kvp(test.values[1], 'quux')
+    assert_variable(test.values[0].value, 'bar')
+    assert_number(test.values[1].value, 0)
+
+
+def test_whitespace_dict():
+    test_str = '''{
+    "foo"
+    :
+    "bar"
+    ,
+}
+'''
+    test = Plywood(test_str).compile()[0]
+    assert_dict(test, 1)
+
+def test_empty_dict():
+    test = Plywood('{\n    \n}').compile()[0]
+    assert_dict(test, 0)
+
+
 def test_dict_two():
     test = Plywood('{"foo": bar, bar: baz}').compile()[0]
     assert_dict(test, 2)

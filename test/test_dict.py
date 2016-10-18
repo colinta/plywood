@@ -10,6 +10,33 @@ test = {'key': 'value'}
     assert_output(input, desired)
 
 
+def test_empty_dict():
+    input = '''
+test = {}
+'''
+    desired = ''
+    assert_output(input, desired)
+
+
+def test_multiline_dict():
+    input = '''
+test = {
+    'key': 'value'
+}
+'''
+    desired = ''
+    assert_output(input, desired)
+
+
+def test_multiline_empty_dict():
+    input = '''
+test = {
+}
+'''
+    desired = ''
+    assert_output(input, desired)
+
+
 def test_dict_getitem():
     dummy = {}
     dummy['property'] = 'value'
