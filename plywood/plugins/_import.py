@@ -35,6 +35,14 @@ def _import(states, scope, arguments, block):
     return states, ''
 
 
+@PlywoodEnv.register_runtime('open')
+def _open(states, scope, arguments, block):
+    if len(block.lines):
+        raise InvalidArguments('`import` does not accept a block')
+    args = map(lambda arg: arg.python_value(scope), arguments.args)
+    retval = open(*args)
+    return states, retval
+
 @PlywoodEnv.register_runtime('from')
 def _from(states, scope, arguments, block):
     if len(arguments.kwargs):
