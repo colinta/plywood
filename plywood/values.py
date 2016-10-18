@@ -309,8 +309,10 @@ class PlywoodPythonValue(PlywoodValue):
     def get_item(self, attr, scope):
         val = self.python_value(scope)
         key = attr.python_value(scope)
-        if key in val:
+        try:
             return val[key]
+        except IndexError, KeyError:
+            pass
         return None
 
     def __repr__(self):
@@ -620,6 +622,24 @@ class PlywoodList(PlywoodValue):
     def python_value(self, scope):
         return self.values
 
+    def get_item(self, index, scope):
+        index = index.python_value(scope)
+        sys.stderr.write(repr(index))
+        try:
+            return val[index]
+        except (KeyError, TypeError):
+            pass
+
+    def get_attr(self, attr, scope):
+        attr = attr.get_name()
+        if hasattr(self.values, attr):
+            return getattr(self.values, attr)
+        try:
+            return val[attr]
+        except (KeyError, TypeError):
+            pass
+        return None
+
     def __getitem__(self, key):
         return self.values.__getitem__(key)
 
@@ -726,7 +746,9 @@ class PlywoodDict(PlywoodValue):
             if kvp.key.python_value(scope) == key:
                 kvp.value = value
                 return
-        raise KeyError(key)
+        key = attr
+        self.values.append(PlywoodKvp(key, value))
+        return
 
     def get_item(self, attr, scope):
         key = attr.python_value(scope)
@@ -734,6 +756,9 @@ class PlywoodDict(PlywoodValue):
             if kvp.key.python_value(scope) == key:
                 return kvp.value
         raise KeyError(key)
+
+    def set_attr(self, attr, value, scope):
+        return self.set_item(PlywoodString(value.location, attr.get_name()), value, scope)
 
     def get_attr(self, attr, scope):
         key = attr.get_name()
