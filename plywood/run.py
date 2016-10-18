@@ -26,7 +26,7 @@ from values import (
     PlywoodDict,
     )
 from plywood.env import PlywoodEnv
-from exceptions import UnindentException
+from exceptions import UnindentException, BreakException
 from scope import Scope
 
 
@@ -54,7 +54,11 @@ class Plywood(object):
         parsed = self.compile()
         runtime.scope['__input'] = self.input
         runtime.scope['self'] = Scope(context)
-        return parsed.python_value(runtime.scope)
+        try:
+            retval = parsed.python_value(runtime.scope)
+        except BreakException as e:
+            retval = e.retval
+        return retval
 
     def compile(self):
         if self.parsed is None:
