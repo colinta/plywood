@@ -21,3 +21,7 @@ DOCTYPES = {
 @PlywoodEnv.register_fn()
 def doctype(doctype='5'):
     return DOCTYPES.get(str(doctype), doctype)
+
+@PlywoodEnv.register_fn()
+def xml():
+    return '<?xml version="1.0" encoding="utf-8" ?>'
