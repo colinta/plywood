@@ -64,8 +64,7 @@ class PlywoodEnv(object):
                 value = PlywoodFunction(fn, **kwargs)
                 scope[key] = value
             for key, plugin in self.HTML_PLUGINS.iteritems():
-                fn, kwargs = plugin
-                value = PlywoodHtmlPlugin(fn, **kwargs)
+                value = PlywoodHtmlPlugin(plugin)
                 scope[key] = value
 
         more_globals = options.get('globals', {})
@@ -104,11 +103,11 @@ class PlywoodEnv(object):
         return decorator
 
     @classmethod
-    def register_html_plugin(cls, name=None, **kwargs):
+    def register_html_plugin(cls, name):
         def decorator(fn):
             plugin_name = name
             if plugin_name is None:
                 plugin_name = fn.__name__
-            cls.HTML_PLUGINS[plugin_name] = (fn, kwargs)
+            cls.HTML_PLUGINS[plugin_name] = fn
             return fn
         return decorator
