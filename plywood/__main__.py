@@ -8,4 +8,5 @@ def run():
         if '=' in arg:
             key, value = arg.split('=', 2)
             scope[key] = eval(value)
-    sys.stdout.write(plywood(sys.stdin.read(), scope, indent='  '))
+    out = plywood(sys.stdin.read(), scope, indent='  ')
+    sys.stdout.write(out.encode('utf-8'))

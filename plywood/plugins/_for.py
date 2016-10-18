@@ -49,7 +49,7 @@ def _for(states, scope, arguments, block):
             # scope[]
             pass
         try:
-            retval += str(block.python_value(scope))
+            retval += unicode(block.python_value(scope))
         except BreakException as e:
             retval += e.retval
             break

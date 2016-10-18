@@ -172,7 +172,11 @@ class PlywoodString(PlywoodValue):
             # unindent
             lang, value = PlywoodString.unindent(value, return_lang=True)
             self.lang = lang
-        self.value = uni(value)
+
+        if isinstance(value, unicode):
+            self.value = value
+        else:
+            self.value = value.decode('utf-8')
         super(PlywoodString, self).__init__(location)
 
     @staticmethod

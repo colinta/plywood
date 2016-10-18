@@ -11,7 +11,7 @@ html_reserved_list = (u"\"", u"'", u"<", u">", u"&")
 
 
 def entitize(text):
-    text = str(text).replace('&', '&amp;')
+    text = unicode(text).replace('&', '&amp;')
     for k in html_escape_table:
         v = html_escape_table[k]
         text = text.replace(k, v)
