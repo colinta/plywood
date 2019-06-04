@@ -9,7 +9,7 @@ def reverse(contents):
 
 @PlywoodEnv.register_fn()
 def cdata(contents):
-    return '<![CDATA[' + unicode(contents) + ']]>'
+    return '<![CDATA[' + str(contents) + ']]>'
 
 
 @PlywoodEnv.register_fn('len')
@@ -24,7 +24,7 @@ HTML_ESCAPE_TABLE = {
 
 @PlywoodEnv.register_fn()
 def e(text):
-    text = unicode(text)
+    text = str(text)
     text = text.replace('&', '&amp;')
     for k in HTML_ESCAPE_TABLE:
         v = HTML_ESCAPE_TABLE[k]

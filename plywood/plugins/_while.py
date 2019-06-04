@@ -5,9 +5,9 @@ from plywood.env import PlywoodEnv
 from plywood.values import PlywoodParens
 from plywood.runtime import Continue
 from plywood.exceptions import InvalidArguments
-from _if import ElseState
-from empty import EmptyState
-from _break import BreakException, ContinueException
+from ._if import ElseState
+from .empty import EmptyState
+from ._break import BreakException, ContinueException
 
 
 @PlywoodEnv.register_runtime('while')

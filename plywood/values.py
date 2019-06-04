@@ -1,7 +1,7 @@
 from chomsky import Whitespace, ParseException
-from runtime import Runtime, Continue, Skip, SuppressNewline, SuppressOneNewline
-from exceptions import PlywoodKeyError, this_line, BreakException, ContinueException, InvalidArguments
-from element import output_element
+from .runtime import Runtime, Continue, Skip, SuppressNewline, SuppressOneNewline
+from .exceptions import PlywoodKeyError, this_line, BreakException, ContinueException, InvalidArguments
+from .element import output_element
 
 
 class PlywoodValue(object):
@@ -27,7 +27,7 @@ class PlywoodValue(object):
         if len(arguments.args) != 1 \
             or len(arguments.kwargs):
             raise InvalidArguments('{0!s} only accepts one conditional argument'.format(self))
-        retval = unicode(self.python_value(scope)) + unicode(arguments.args[0].python_value(scope))
+        retval = str(self.python_value(scope)) + str(arguments.args[0].python_value(scope))
         return [Continue()], PlywoodWrapper(self.location, retval)
 
     def run(self, states, scope):
@@ -64,9 +64,6 @@ class PlywoodBlock(PlywoodValue):
     def __str__(self):
         return '\n'.join(str(v) for v in self.lines)
 
-    def __unicode__(self):
-        return '\n'.join(unicode(v) for v in self.lines)
-
     def python_value(self, scope):
         states = [Continue()]
         return self.run(states, scope)[1].python_value(scope)
@@ -88,7 +85,7 @@ class PlywoodBlock(PlywoodValue):
                 else:
                     cmd_ret = cmd_ret.python_value(scope)
                     if cmd_ret is not None:
-                        retval += unicode(cmd_ret)
+                        retval += str(cmd_ret)
                         suppress_newline = SuppressNewline() in states or SuppressOneNewline() in states
                         if not self.inline and not suppress_newline:
                             retval += scope['__runtime'].options['separator']
@@ -160,7 +157,7 @@ class PlywoodVariable(PlywoodValue):
     __str__ = lambda self: self.name
 
 
-class uni(unicode):
+class uni(str):
     pass
 
 
@@ -173,7 +170,7 @@ class PlywoodString(PlywoodValue):
             lang, value = PlywoodString.unindent(value, return_lang=True)
             self.lang = lang
 
-        if isinstance(value, unicode):
+        if isinstance(value, str):
             self.value = value
         else:
             self.value = value.decode('utf-8')
@@ -216,8 +213,8 @@ class PlywoodString(PlywoodValue):
         return self.value
 
     def python_value(self, scope):
-        from run import Plywood
-        from env import PlywoodEnv
+        from .run import Plywood
+        from .env import PlywoodEnv
 
         # string interpolation
         original = self.value
@@ -311,7 +308,9 @@ class PlywoodPythonValue(PlywoodValue):
         key = attr.python_value(scope)
         try:
             return val[key]
-        except IndexError, KeyError:
+        except IndexError:
+            pass
+        except KeyError:
             pass
         return None
 
@@ -320,9 +319,6 @@ class PlywoodPythonValue(PlywoodValue):
 
     def __str__(self):
         return str(self.value)
-
-    def __unicode__(self):
-        return unicode(self.value)
 
 
 class PlywoodNumber(PlywoodValue):
@@ -347,9 +343,6 @@ class PlywoodNumber(PlywoodValue):
 
     def __str__(self):
         return str(self.value)
-
-    def __unicode__(self):
-        return unicode(self.value)
 
 
 class PlywoodOperator(PlywoodValue):
@@ -439,14 +432,6 @@ class PlywoodOperator(PlywoodValue):
             op = ' ' + op + ' '
         return '{self.left}{op}{self.right}'.format(self=self, op=op)
 
-    def __unicode__(self):
-        op = unicode(self.operator)
-        if self.operator == '[]':
-            return '{self.left}[{self.right}]'.format(self=self)
-        if self.operator not in ['.']:
-            op = ' ' + op + ' '
-        return '{self.left}{op}{self.right}'.format(self=self, op=op)
-
 
 class PlywoodCallOperator(PlywoodOperator):
     def __init__(self, left, right, block=None):
@@ -483,13 +468,6 @@ class PlywoodCallOperator(PlywoodOperator):
         retval = '{indent}{self.left}{self.right}'.format(self=self, indent=indent)
         if self.block:
             retval += ':\n{indent}    {block}'.format(self=self, block=str(self.block).replace("\n", "\n    " + indent), indent=indent)
-        return retval
-
-    def __unicode__(self):
-        indent = ''
-        retval = '{indent}{self.left}{self.right}'.format(self=self, indent=indent)
-        if self.block:
-            retval += ':\n{indent}    {block}'.format(self=self, block=unicode(self.block).replace("\n", "\n    " + indent), indent=indent)
         return retval
 
 
@@ -537,11 +515,11 @@ class PlywoodParens(PlywoodValue):
                 return PlywoodKvp(key, value.right, kwarg=True)
             return value
 
-        values = map(convert_assign, values)
         is_kvp = lambda value: isinstance(value, PlywoodKvp)
         is_not_kvp = lambda value: not isinstance(value, PlywoodKvp)
-        self.args = filter(is_not_kvp, values)
-        self.kwargs = filter(is_kvp, values)
+        values = list(map(convert_assign, values))
+        self.args = list(filter(is_not_kvp, values))
+        self.kwargs = list(filter(is_kvp, values))
         self.is_set = is_set
         super(PlywoodParens, self).__init__(location)
 
@@ -574,15 +552,6 @@ class PlywoodParens(PlywoodValue):
             between = ', '
         return '(' + ', '.join(str(v) for v in self.args) + between + ', '.join(str(v) for v in self.kwargs) + extra + ')'
 
-    def __unicode__(self):
-        extra = ''
-        if self.is_set and len(self.args) == 1:
-            extra = ','
-        between = ''
-        if self.args and self.kwargs:
-            between = ', '
-        return '(' + ', '.join(unicode(v) for v in self.args) + between + ', '.join(unicode(v) for v in self.kwargs) + extra + ')'
-
 
 class PlywoodKvp(object):
     def __init__(self, key, value, kwarg=False):
@@ -605,12 +574,6 @@ class PlywoodKvp(object):
             return str(self.key)[1:-1] + self.separator + str(self.value)
         else:
             return str(self.key) + self.separator + str(self.value)
-
-    def __unicode__(self):
-        if self.separator == '=':
-            return unicode(self.key)[1:-1] + self.separator + unicode(self.value)
-        else:
-            return unicode(self.key) + self.separator + unicode(self.value)
 
 
 class PlywoodList(PlywoodValue):
@@ -649,9 +612,6 @@ class PlywoodList(PlywoodValue):
     def __str__(self):
         return '[' + ', '.join(str(v) for v in self.values) + ']'
 
-    def __unicode__(self):
-        return '[' + ', '.join(unicode(v) for v in self.values) + ']'
-
 
 class PlywoodXml(PlywoodValue):
     def __init__(self, location, element, arguments):
@@ -685,9 +645,6 @@ class PlywoodXml(PlywoodValue):
     def __str__(self):
         return '<' + self.element + ' ' + ', '.join(str(v) for v in self.arguments) + '>'
 
-    def __unicode__(self):
-        return '<' + self.element + ' ' + ', '.join(unicode(v) for v in self.arguments) + '>'
-
 
 class PlywoodIndices(PlywoodValue):
     def __init__(self, location, values, force_list):
@@ -711,9 +668,6 @@ class PlywoodIndices(PlywoodValue):
 
     def __str__(self):
         return ', '.join(str(v) for v in self.values) + (self.force_list and ',' or '')
-
-    def __unicode__(self):
-        return ', '.join(unicode(v) for v in self.values) + (self.force_list and ',' or '')
 
 
 class PlywoodSlice(PlywoodValue):
@@ -772,9 +726,6 @@ class PlywoodDict(PlywoodValue):
 
     def __str__(self):
         return '{' + ', '.join(str(v) for v in self.values) + '}'
-
-    def __unicode__(self):
-        return '{' + ', '.join(unicode(v) for v in self.values) + '}'
 
 
 class PlywoodCallable(PlywoodValue):
@@ -881,9 +832,9 @@ def PlywoodWrapper(location, value):
         and len(value[0]) > 0 \
         and isinstance(value[0][0], Runtime):
         return [value[0], PlywoodWrapper(location, value[1])]
-    if isinstance(value, basestring):
+    if isinstance(value, str):
         return PlywoodString(location, value)
-    if isinstance(value, int) or isinstance(value, long) or isinstance(value, float):
+    if isinstance(value, int) or isinstance(value, float):
         return PlywoodNumber(location, value)
     if callable(value):
         retval = PlywoodFunction(value)

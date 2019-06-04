@@ -8,9 +8,9 @@ from plywood.env import PlywoodEnv
 from plywood.values import PlywoodOperator, PlywoodVariable, PlywoodParens
 from plywood.runtime import Continue
 from plywood.exceptions import InvalidArguments
-from _if import ElseState
-from empty import EmptyState
-from _break import BreakException, ContinueException
+from ._if import ElseState
+from .empty import EmptyState
+from ._break import BreakException, ContinueException
 
 
 @PlywoodEnv.register_runtime('for')
@@ -49,7 +49,7 @@ def _for(states, scope, arguments, block):
             # scope[]
             pass
         try:
-            retval += unicode(block.python_value(scope))
+            retval += str(block.python_value(scope))
         except BreakException as e:
             retval += e.retval
             break

@@ -76,7 +76,7 @@ def to_datetime(value):
         return value
     if isinstance(value, int) or isinstance(value, float):
         return datetime.datetime.utcfromtimestamp(value)
-    if isinstance(value, basestring):
+    if isinstance(value, str):
         import dateutil.parser
         return dateutil.parser.parse(value)
     raise TypeError('Invalid argument {!r} passed to `to_datetime`'.format(value))

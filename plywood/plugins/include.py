@@ -28,7 +28,7 @@ def include(states, scope, arguments, block):
             (item.key.get_name(), item.value)
                 for item in arguments.kwargs
                 )
-        for key, value in kwargs.iteritems():
+        for key, value in kwargs.items():
             if key in context:
                 restore_scope[key] = context[key]
             else:
@@ -52,7 +52,7 @@ def include(states, scope, arguments, block):
         raise Exception('Could not find template: {0!r}'.format(template_name))
 
     if len(arguments.kwargs):
-        for key, value in restore_scope.iteritems():
+        for key, value in restore_scope.items():
             context[key] = value
         for key in delete_scope:
             del context[key]

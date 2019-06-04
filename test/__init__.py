@@ -84,6 +84,4 @@ def assert_output(input, desired, scope={}, **options):
 
 
 def assert_strings(actual, desired):
-    print 'actual:', actual
-    print 'desired:', desired
     assert desired == actual

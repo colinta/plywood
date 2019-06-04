@@ -9,11 +9,12 @@ def read(fname):
 
 setup(
         name="plywood",
-        version="1.11.0",
+        version="2.0.0",
         author="Colin T.A. Gray",
         author_email="colinta@gmail.com",
         url="https://github.com/colinta/plywood",
-        install_requires=['chomsky >= 1.0.2'],
+        install_requires=['chomsky >= 2.0.0'],
+        python_requires='>3.0.0',
 
         entry_points={
             'console_scripts': [
@@ -30,7 +31,8 @@ setup(
         license="BSD",
         classifiers=[
             "Programming Language :: Python",
-            "Development Status :: 1 - Planning",
+            "Programming Language :: Python :: 3",
+            "Development Status :: 4 - Beta",
             'Environment :: Console',
             "License :: OSI Approved :: BSD License",
             "Operating System :: OS Independent",

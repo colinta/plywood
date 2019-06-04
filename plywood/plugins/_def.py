@@ -75,7 +75,7 @@ def _def(states, scope, arguments, block):
             local_var_name = local_arglist.pop(0)
             called_scope[local_var_name] = local_value
 
-        for local_var_name, local_value in defaults.iteritems():
+        for local_var_name, local_value in defaults.items():
             if local_var_name in local_arglist:
                 local_arglist.remove(local_var_name)
                 called_scope[local_var_name] = local_value

@@ -11,7 +11,7 @@ from plywood.runtime import Continue
 def plus(left, right, scope):
     left = left.python_value(scope)
     right = right.python_value(scope)
-    if isinstance(left, basestring):
+    if isinstance(left, str):
         return left + (right and right or '')
     return left + right
 

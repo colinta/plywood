@@ -14,9 +14,7 @@ class RuntimeMetaclass(type):
         cls.singleton = None
 
 
-class Runtime(object):
-    __metaclass__ = RuntimeMetaclass
-
+class Runtime(object, metaclass=RuntimeMetaclass):
     def __new__(cls):
         if not cls.singleton:
             cls.singleton = super(Runtime, cls).__new__(cls)

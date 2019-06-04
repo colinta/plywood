@@ -6,11 +6,6 @@ def _str(*args, **kwargs):
     return str(*args, **kwargs)
 
 
-@PlywoodEnv.register_fn('unicode')
-def _unicode(*args, **kwargs):
-    return unicode(*args, **kwargs)
-
-
 @PlywoodEnv.register_fn('int')
 def _int(*args, **kwargs):
     return int(*args, **kwargs)

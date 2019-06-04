@@ -45,7 +45,7 @@ class Scope(object):
     def pop(self):
         restore = self.restore_scope.pop()
         delete = self.delete_scope.pop()
-        for key, value in restore.iteritems():
+        for key, value in restore.items():
             self.values[key] = value
         for key in delete:
             del self.values[key]

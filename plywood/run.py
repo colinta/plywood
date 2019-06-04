@@ -5,13 +5,13 @@ from chomsky import (
     Buffer,
     ParseException,
     )
-from grammar import (
+from .grammar import (
     PlywoodNumberGrammar,
     PlywoodStringGrammar,
     PlywoodVariableGrammar,
     PlywoodOperatorGrammar,
     )
-from values import (
+from .values import (
     PlywoodValue,
     PlywoodOperator,
     PlywoodCallOperator,
@@ -26,8 +26,8 @@ from values import (
     PlywoodDict,
     )
 from plywood.env import PlywoodEnv
-from exceptions import UnindentException, BreakException
-from scope import Scope
+from .exceptions import UnindentException, BreakException
+from .scope import Scope
 
 
 def plywood(input, context={}, **options):
@@ -37,10 +37,10 @@ def plywood(input, context={}, **options):
 
 class Plywood(object):
     def __init__(self, input):
-        if isinstance(input, unicode):
+        if isinstance(input, str):
             self.input = input
         else:
-            self.input = unicode(input, 'utf-8')
+            self.input = str(input, 'utf-8')
         self.buffer = Buffer(self.input)
         self.output = ''
         self.block_indent = None

@@ -9,7 +9,7 @@ def register_html_plugin(tag_name, is_self_closing=False):
     plugin.__name__ = tag_name
 
 
-from tags import BLOCK_TAGS, INLINE_TAGS, SELF_CLOSING
+from .tags import BLOCK_TAGS, INLINE_TAGS, SELF_CLOSING
 
 for tag in BLOCK_TAGS:
     register_html_plugin(tag)

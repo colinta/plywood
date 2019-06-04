@@ -55,15 +55,15 @@ class PlywoodEnv(object):
 
         include_defaults = options.get('defaults', True)
         if include_defaults:
-            for key, runtime in self.RUNTIME.iteritems():
+            for key, runtime in self.RUNTIME.items():
                 fn, kwargs = runtime
                 value = PlywoodRuntime(fn, **kwargs)
                 scope[key] = value
-            for key, function in self.FUNCTIONS.iteritems():
+            for key, function in self.FUNCTIONS.items():
                 fn, kwargs = function
                 value = PlywoodFunction(fn, **kwargs)
                 scope[key] = value
-            for key, plugin in self.HTML_PLUGINS.iteritems():
+            for key, plugin in self.HTML_PLUGINS.items():
                 value = PlywoodHtmlPlugin(plugin)
                 scope[key] = value
 
