@@ -107,6 +107,8 @@ INSTALLATION
 
     $ pip install plywood
     $ ply < in.ply > out.html
+    # local development
+    $ pip install -e .
 
 
 -------
@@ -156,3 +158,12 @@ See LICENSE_ for more details (it's a simplified BSD license).
 
 .. _LICENSE:      https://github.com/colinta/StrangeCase/blob/master/LICENSE
 .. _Modgrammar:   http://pypi.python.org/pypi/modgrammar
+
+-------
+RELEASE
+-------
+
+::
+
+    python setup.py sdist
+    twine upload dist/*
