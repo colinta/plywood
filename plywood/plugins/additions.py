@@ -7,9 +7,13 @@ def reverse(contents):
     return contents[::-1]
 
 
-@PlywoodEnv.register_fn()
-def cdata(contents):
-    return '<![CDATA[' + str(contents) + ']]>'
+@PlywoodEnv.register_fn(accepts_block=True)
+def cdata(block, contents=None, js=False):
+    if contents:
+        output = str(contents)
+    else:
+        output = "\n" + block(indent=True) + "\n"
+    return (js and '//' or '') + '<![CDATA[' + output + (js and '//' or '') + ']]>'
 
 
 @PlywoodEnv.register_fn('len')

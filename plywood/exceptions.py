@@ -1,11 +1,21 @@
 from chomsky import ParseException
 
 
-class PlywoodKeyError(Exception):
+class CompilationError(Exception):
+    def __init__(self, buffer, message):
+        self.buffer = buffer
+        super(CompilationError, self).__init__(message)
+
+
+class IndentError(CompilationError):
     pass
 
 
-class UnindentException(Exception):
+class IndentBreak(Exception):
+    pass
+
+
+class PlywoodKeyError(Exception):
     pass
 
 

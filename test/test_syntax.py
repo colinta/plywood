@@ -1,5 +1,6 @@
 from pytest import raises
 from chomsky import ParseException
+from plywood.exceptions import IndentError
 from plywood import (
     plywood, Plywood, PlywoodVariable,
     )
@@ -479,9 +480,9 @@ foo(bar, item='value')
 
 
 def test_block_indent_fail():
-    with raises(ParseException):
-        test = Plywood('   foo').compile()
-        assert test == None
+    with raises(IndentError):
+        Plywood('   foo').compile()
+        assert False
 
 
 def test_block():
@@ -670,7 +671,7 @@ foo:
 
 
 def test_multi_mixed_fail():
-    with raises(ParseException):
+    with raises(IndentError):
         plywood('''
 foo:
     foo:
@@ -736,14 +737,14 @@ foo: bar:
 
 
 def test_mixed_block_fail():
-    with raises(ParseException):
+    with raises(IndentError):
         test = Plywood('''
 foo:
     bar:
         baz
       baz
 ''').compile()
-        assert test == None
+        assert False
 
 
 def test_for_syntax():

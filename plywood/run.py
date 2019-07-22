@@ -26,7 +26,7 @@ from .values import (
     PlywoodDict,
     )
 from plywood.env import PlywoodEnv
-from .exceptions import UnindentException, BreakException
+from .exceptions import IndentError, IndentBreak, BreakException, CompilationError
 from .scope import Scope
 
 
@@ -107,7 +107,7 @@ class Plywood(object):
                 self.whitespace = 'singleline_whitespace'
                 try:
                     line = self.consume_until('eol')
-                except UnindentException:
+                except IndentBreak:
                     while self.buffer[0] != '\n' and self.buffer[0] != '\r':
                         self.buffer.advance(-1)
                     break
@@ -178,21 +178,18 @@ class Plywood(object):
             if not self.block_indent:
                 whitespace = str(self.consume('optional_whitespace'))
                 prev_indent = self.prev_indent[-1].literal
-                if len(prev_indent) > len(whitespace):
-                    raise UnindentException()
-                    raise ParseException('Expected: more indent at {self.buffer!r}'.format(self=self))
-                if len(prev_indent) == len(whitespace):
-                    raise UnindentException()
+                if len(prev_indent) >= len(whitespace):
+                    raise IndentBreak()
 
                 self.block_indent = Literal(whitespace)
             else:
                 if not self.block_indent.test(self.buffer):
-                    raise UnindentException()
+                    raise IndentBreak()
 
                 indent = self.block_indent.consume(self.buffer)
                 if self.test('singleline_whitespace'):
                     extra = self.consume('singleline_whitespace')
-                    raise ParseException('Unexpected: too much indent. '
+                    raise IndentError(self.buffer, 'Unexpected: too much indent. '
                         'found {extra!r} ({len_extra}) '
                         'instead of {indent!r} ({len_indent})'.format(extra=indent + extra, len_extra=len(indent) + len(extra),
                                                         indent=indent, len_indent=len(indent)))
@@ -233,8 +230,6 @@ class Plywood(object):
         and is either 'merged' into the right value via an operation, or it is
         returned so that scanning can continue at a lower precedence.
         """
-        if len(line) == index:
-            raise ParseException('Expected: value')
         precedence_order, direction = precedence
         new_precedence = None
         left = line[index]
@@ -323,14 +318,18 @@ class Plywood(object):
 
     def consume_token(self, prev_is_operator=False):
         retval = None
-        TOKEN_TESTS = prev_is_operator and self.TOKEN_TESTS_VAL or self.TOKEN_TESTS_OP
-        for token_test, token_consume in TOKEN_TESTS:
+        if prev_is_operator:
+            token_tests = self.TOKEN_TESTS_VAL
+        else:
+            token_tests = self.TOKEN_TESTS_OP
+
+        for token_test, token_consume in token_tests:
             if self.test(token_test):
                 retval = self.consume(token_consume)
                 break
 
         if retval is None:
-            raise Exception(repr(self.buffer))
+            raise CompilationError(self.buffer, 'Expected: value')
         self.consume('whitespace')
 
         return retval
@@ -354,7 +353,11 @@ class Plywood(object):
         is_set = False
         while not self.test('parens_close'):
             self.consume('whitespace')
-            item = self.consume_until('comma_close_parens')
+            try:
+                item = self.consume_until('comma_close_parens')
+            except ParseException as e:
+                raise CompilationError(self.buffer, 'Expected closing parentheses')
+
             if item:
                 tokens.append(item)
             if self.test(','):
@@ -376,7 +379,11 @@ class Plywood(object):
         is_slice = False
         while not self.test('list_close'):
             self.consume('whitespace')
-            item = self.consume_until('comma_close_list')
+            try:
+                item = self.consume_until('comma_close_list')
+            except ParseException as e:
+                raise CompilationError(self.buffer, 'Expected closing bracket')
+
             tokens.append(item)
             if self.test(','):
                 force_list = True
@@ -454,20 +461,20 @@ class Plywood(object):
 
  # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
     TESTERS = {
-        'eof': StringEnd().test,
-        'eol': (Literal('\n') | '\r\n' | '\r' | '#' | StringEnd).test,
-        'comment': Literal('#').test,
-        'from': Literal('from').test,
+        'eof': StringEnd(),
+        'eol': (Literal('\n') | '\r\n' | '\r' | '#' | StringEnd),
+        'comment': Literal('#'),
+        'from': Literal('from'),
 
-        'variable': Char('_' + string.ascii_letters).test,
-        'number': (Char('0123456789') | ('-' + Char('0123456789'))).test,
-        'string': Char('"\'').test,
+        'variable': Char('_' + string.ascii_letters),
+        'number': (Char('0123456789') | ('-' + Char('0123456789'))),
+        'string': Char('"\''),
 
-        'comma_close_parens': (Literal(',') | Literal(')')).test,
-        'comma_close_list': (Literal(',') | Literal(']')).test,
-        'comma_close_xml': (Literal(',') | Literal('>')).test,
-        'colon_close_key': Literal(':').test,
-        'comma_close_dict': (Literal(',') | Literal('}')).test,
+        'comma_close_parens': (Literal(',') | Literal(')')),
+        'comma_close_list': (Literal(',') | Literal(']')),
+        'comma_close_xml': (Literal(',') | Literal('>')),
+        'colon_close_key': Literal(':'),
+        'comma_close_dict': (Literal(',') | Literal('}')),
     }
 
     MATCHERS = {
@@ -509,13 +516,12 @@ class Plywood(object):
     })
 
     def test(self, token, **kwargs):
-        method = 'test_{0}'.format(token)
-        if hasattr(self, method):
-            return getattr(self, method)(**kwargs)
+        fn = None
         try:
-            return self.TESTERS[token](self.buffer)
+            fn = self.TESTERS[token]
         except KeyError:
-            return self.MATCHERS[token].test(self.buffer)
+            fn = self.MATCHERS[token]
+        return fn.test(self.buffer)
 
     def consume(self, token, **kwargs):
         method = 'consume_{0}'.format(token)
