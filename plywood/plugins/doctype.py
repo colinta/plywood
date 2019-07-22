@@ -2,8 +2,8 @@ from plywood.env import PlywoodEnv
 
 
 DOCTYPES = {
-    '5': '<!doctype html>',
-    'default': '<!doctype html>',
+    '5': '<!DOCTYPE html>',
+    'default': '<!DOCTYPE html>',
     'xml': '<?xml version="1.0" encoding="utf-8" ?>',
     'transitional': '<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">',
     'strict': '<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">',
