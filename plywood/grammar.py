@@ -14,7 +14,7 @@ class PlywoodNumberGrammar(chomsky.Number):
 
     def plywood_value(self):
         if isinstance(self.parsed, chomsky.Float):
-            return PlywoodNumber(self.location, float(str(self)))
+            return PlywoodNumber(self.location - len(str(self)), float(str(self)))
 
         base = 10
         if isinstance(self.parsed, chomsky.HexadecimalInteger):
@@ -23,7 +23,7 @@ class PlywoodNumberGrammar(chomsky.Number):
             base = 8
         if isinstance(self.parsed, chomsky.BinaryInteger):
             base = 2
-        return PlywoodNumber(self.location, int(str(self), base))
+        return PlywoodNumber(self.location - len(str(self)), int(str(self), base))
 
 
 class PlywoodStringGrammar(chomsky.String):
@@ -35,8 +35,8 @@ class PlywoodStringGrammar(chomsky.String):
         parsed = self.parsed
         if isinstance(parsed, chomsky.TripleSingleQuotedString) or\
            isinstance(parsed, chomsky.TripleDoubleQuotedString):
-            return PlywoodString(self.location, str(parsed), triple=True)
-        return PlywoodString(self.location, str(parsed))
+            return PlywoodString(self.location - len(str(parsed)), str(parsed), triple=True)
+        return PlywoodString(self.location - len(str(parsed)), str(parsed))
 
 
 class PlywoodVariableGrammar(chomsky.Variable, metaclass=chomsky.VariableGrammarType):
@@ -48,7 +48,7 @@ class PlywoodVariableGrammar(chomsky.Variable, metaclass=chomsky.VariableGrammar
         self.location = self.buffer.position
 
     def plywood_value(self):
-        return PlywoodVariable(self.location, str(self))
+        return PlywoodVariable(self.location - len(str(self)), str(self))
 
 
 class PlywoodOperatorGrammar(chomsky.Grammar):

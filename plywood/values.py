@@ -1,6 +1,6 @@
 from chomsky import Whitespace, ParseException
 from .runtime import Runtime, Continue, Skip, SuppressNewline, SuppressOneNewline
-from .exceptions import PlywoodKeyError, this_line, BreakException, ContinueException, InvalidArguments
+from .exceptions import KeyError as PlywoodKeyError, BreakException, ContinueException, InvalidArguments
 from .element import output_element
 
 
@@ -132,8 +132,7 @@ class PlywoodVariable(PlywoodValue):
         try:
             retval = scope[self.name]
         except KeyError:
-            line_no, line = this_line(scope['__input'], self.location)
-            raise PlywoodKeyError(self.name, scope, scope['__input'])
+            raise PlywoodKeyError(self.location, scope, self.name)
 
         if not isinstance(retval, PlywoodValue):
             retval = PlywoodWrapper(self.location, retval)
