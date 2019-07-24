@@ -9,4 +9,4 @@ def run():
             key, value = arg.split('=', 2)
             scope[key] = eval(value)
     out = plywood(sys.stdin.read(), scope, indent='  ')
-    sys.stdout.write(out.encode('utf-8'))
+    sys.stdout.write(out)

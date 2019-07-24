@@ -148,7 +148,7 @@ def get_block(states, scope, arguments, block):
 @PlywoodEnv.register_runtime('yield')
 def _yield(states, scope, arguments, block):
     if len(arguments.args) or len(arguments.kwargs) or len(block.lines):
-        raise InvalidArguments('`yield` does not accept any argumentsor block')
+        raise InvalidArguments('`yield` does not accept any arguments or block')
     yield_content = scope.get('__yield', '')
     return states, yield_content
 
