@@ -15,8 +15,6 @@ def test_example_1():
         'persons': ['Joey', 'Joe', 'Shabbadoo'],
         }
     actual = plywood(input, vals, indent='  ')
-    if actual != desired:
-        diff = unified_diff(desired.splitlines(), actual.splitlines())
     assert desired == actual
 
 
@@ -30,6 +28,4 @@ def test_example_2():
         'author': 'colin gray',
         }
     actual = plywood(input, vals, indent='  ')
-    if actual != desired:
-        diff = unified_diff(desired.splitlines(), actual.splitlines())
     assert desired == actual

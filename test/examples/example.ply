@@ -15,7 +15,7 @@ html:
 
   body:
     section.container:
-      div id="page-header"
+      div@page-header
       .row:
         for person in self.persons:
           .span6: person

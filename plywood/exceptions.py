@@ -15,22 +15,16 @@ class IndentBreak(Exception):
     pass
 
 
-class RuntimeError(Exception):
+class PlywoodRuntimeError(Exception):
     def __init__(self, location, scope, message):
         self.location = location
         self.scope = scope
         self.message = message
-        super(RuntimeError, self).__init__()
+        super(PlywoodRuntimeError, self).__init__()
 
     def __str__(self):
         input = self.scope['__input']
         line_no, prev, line, next = runtime_context(input, self.location)
-        print("""=============== exceptions.py at line {0} ===============
-line_no: {1!r}
-prev: {2!r}
-line: {3!r}
-next: {4!r}
-""".format(__import__('sys')._getframe().f_lineno - 5, line_no, prev, line, next, ))
 
         output = "{}\n".format(self.message)
         output += "At line {!r}:\n".format(line_no)
@@ -42,10 +36,11 @@ next: {4!r}
         return output
 
 
-class KeyError(RuntimeError):
+class KeyError(PlywoodRuntimeError):
     def __init__(self, location, scope, name):
         self.name = name
         super(KeyError, self).__init__(location, scope, 'No value for {!r}'.format(name))
+
 
 class InvalidArguments(Exception):
     pass

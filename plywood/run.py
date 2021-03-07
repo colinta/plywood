@@ -26,7 +26,7 @@ from .values import (
     PlywoodDict,
     )
 from plywood.env import PlywoodEnv
-from .exceptions import IndentError, IndentBreak, BreakException, CompilationError
+from .exceptions import IndentError, IndentBreak, BreakException, CompilationError, PlywoodRuntimeError
 from .scope import Scope
 
 
@@ -268,6 +268,7 @@ class Plywood(object):
                         return left, index - 1
                     elif new_order > precedence_order or (new_order == precedence_order and direction == self.RTL):
                         right, index = self.figure_out_precedence(line, index, new_precedence)
+                    # 'location' argument is determined by left
                     left = PlywoodOperator(str(op), left, right)
                 else:
                     # this is the 'auto call' section - when two non-operators

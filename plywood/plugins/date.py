@@ -5,8 +5,8 @@ Provides ``date`` and ``timestamp`` filters.  ``date`` accepts a ``format`` that
 uses ``datetime.strftime`` to output a human readable date.  But where ``date``
 is meant to any date object, ``timestamp`` is meant to output a UTC time.
 
-So use ``{{ date() }}`` on your date properties (like ``page.created_at``),
-and use `{{ date(now()) }}` to output timestamps for RSS feeds and such.
+So use ``date()`` on your date properties (like ``page.created_at``),
+and use ``date(now())`` to output timestamps for RSS feeds and such.
 
 The default date format is outputs something like "11 May 2011".  Here are, for
 my own reference, other formatters::
@@ -59,10 +59,10 @@ my own reference, other formatters::
 
 Usage::
 
-    {{ date(page.created_at) }}
-    {{ date(page.created_at, '%Y-%m-%d') }}
-    {{ date(now) }}
-    {{ timestamp(now) }}
+    date(page.created_at)
+    date(page.created_at, '%Y-%m-%d')
+    date(now)
+    timestamp(now)
 
 If any other string is passed to ``date`` or ``timestamp``, it will be parsed
 using ``python-dateutil``.  Since this is less commond, it is imported lazily.
@@ -93,7 +93,7 @@ def date(value, format='%d %b %Y'):
 
 
 @PlywoodEnv.register_fn()
-def now(format=None):
+def now():
     return datetime.datetime.now()
 
 

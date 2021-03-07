@@ -1,6 +1,6 @@
 from chomsky import Whitespace, ParseException
 from .runtime import Runtime, Continue, Skip, SuppressNewline, SuppressOneNewline
-from .exceptions import KeyError as PlywoodKeyError, BreakException, ContinueException, InvalidArguments
+from .exceptions import KeyError as PlywoodKeyError, BreakException, ContinueException, InvalidArguments, PlywoodRuntimeError
 from .element import output_element
 
 
@@ -9,8 +9,19 @@ class PlywoodValue(object):
         self.location = location
         self.suppress_nl = False
 
+    def copy(self, instance=None):
+        if instance is None:
+            copy = type(self)(self.location)
+        else:
+            copy = instance
+        copy.suppress_nl = self.suppress_nl
+        return copy
+
     def get_attr(self, attr, scope):
-        raise Exception("{self!r} has no property {attr!r}".format(self=self, attr=attr))
+        raise PlywoodRuntimeError(self.location, scope, "{self!r} has no property {attr!r}".format(self=self, attr=attr))
+
+    def assign_id(self, attr, scope):
+        raise PlywoodRuntimeError(self.location, scope, "{self!r} does not suppport id assignment {attr!r}".format(self=self, attr=attr))
 
     def plywood_value(self):
         return self
@@ -36,14 +47,21 @@ class PlywoodValue(object):
                 states.append(SuppressOneNewline())
             return states, self.get_value(scope)
         else:
-            raise Exception(''.join(states))
+            raise PlywoodRuntimeError(self.location, scope, ''.join(states))
 
 
 class PlywoodBlock(PlywoodValue):
     def __init__(self, location, lines, inline=False):
         self.lines = lines
         self.inline = inline
-        super(PlywoodBlock, self).__init__(location)
+        super().__init__(location)
+
+    def copy(self, instance=None):
+        if instance is None:
+            copy = type(self)(self.location, list(line.copy() for line in self.lines), self.inline)
+        else:
+            copy = instance
+        return super().copy(copy)
 
     def append(self, line):
         self.lines.append(line)
@@ -108,7 +126,14 @@ class PlywoodBlock(PlywoodValue):
 class PlywoodVariable(PlywoodValue):
     def __init__(self, location, name):
         self.name = name
-        super(PlywoodVariable, self).__init__(location)
+        super().__init__(location)
+
+    def copy(self, instance=None):
+        if instance is None:
+            copy = type(self)(self.location, self.name)
+        else:
+            copy = instance
+        return super().copy(copy)
 
     def run(self, states, scope):
         return self.get_value(scope).run(states, scope)
@@ -144,6 +169,9 @@ class PlywoodVariable(PlywoodValue):
     def get_attr(self, attr, scope):
         return self.get_value(scope).get_attr(attr, scope)
 
+    def assign_id(self, attr, scope):
+        return self.get_value(scope).assign_id(attr, scope)
+
     def get_item(self, attr, scope):
         return self.get_value(scope).get_item(attr, scope)
 
@@ -173,7 +201,14 @@ class PlywoodString(PlywoodValue):
             self.value = value
         else:
             self.value = value.decode('utf-8')
-        super(PlywoodString, self).__init__(location)
+        super().__init__(location)
+
+    def copy(self, instance=None):
+        if instance is None:
+            copy = type(self)(self.location, self.value, self.triple)
+        else:
+            copy = instance
+        return super().copy(copy)
 
     @staticmethod
     def unindent(value, return_lang=False):
@@ -280,7 +315,14 @@ class PlywoodPythonValue(PlywoodValue):
         self.value = value
         if callable(value):
             raise Exception('hey now')
-        super(PlywoodPythonValue, self).__init__(location)
+        super().__init__(location)
+
+    def copy(self, instance=None):
+        if instance is None:
+            copy = type(self)(self.location, self.value)
+        else:
+            copy = instance
+        return super().copy(copy)
 
     def python_value(self, scope):
         return self.value
@@ -323,7 +365,14 @@ class PlywoodPythonValue(PlywoodValue):
 class PlywoodNumber(PlywoodValue):
     def __init__(self, location, value):
         self.value = value
-        super(PlywoodNumber, self).__init__(location)
+        super().__init__(location)
+
+    def copy(self, instance=None):
+        if instance is None:
+            copy = type(self)(self.location, self.value)
+        else:
+            copy = instance
+        return super().copy(copy)
 
     def call(self, states, scope, arguments, block):
         if len(block.lines):
@@ -360,14 +409,23 @@ class PlywoodOperator(PlywoodValue):
         try:
             handler, _ = cls.OPERATORS[operator]
         except KeyError:
-            raise Exception('No operator handler for {operator!r}'.format(operator=operator))
+            raise PlywoodRuntimeError(self.location, scope, 'No operator handler for {operator!r}'.format(operator=operator))
         return PlywoodWrapper(left.location, handler(left, right, scope))
 
     def __init__(self, operator, left, right):
         self.operator = operator
         self.left = left
         self.right = right
-        super(PlywoodOperator, self).__init__(left.location)
+        if left == '()':
+            raise Exception('foo')
+        super().__init__(left.location)
+
+    def copy(self, instance=None):
+        if instance is None:
+            copy = type(self)(self.operator, self.left.copy(), self.right.copy())
+        else:
+            copy = instance
+        return super().copy(copy)
 
     def run(self, states, scope):
         try:
@@ -379,7 +437,7 @@ class PlywoodOperator(PlywoodValue):
             states = [kwargs.get('state') or Continue()]
             return states, self.get_value(scope)
         else:
-            raise Exception(''.join(states))
+            raise PlywoodRuntimeError(self.location, scope, ''.join(states))
 
     def get_value(self, scope):
         return self.handle(self.operator, self.left, self.right, scope)
@@ -390,6 +448,9 @@ class PlywoodOperator(PlywoodValue):
     def get_attr(self, attr, scope):
         return self.handle(self.operator, self.left, self.right, scope).get_attr(attr, scope)
 
+    def assign_id(self, attr, scope):
+        return self.handle(self.operator, self.left, self.right, scope).assign_id(attr, scope)
+
     def get_item(self, attr, scope):
         target = self.handle(self.operator, self.left, self.right, scope)
         return target.get_item(attr, scope)
@@ -398,22 +459,22 @@ class PlywoodOperator(PlywoodValue):
         try:
             handler, kwargs = self.OPERATORS[self.operator]
         except KeyError:
-            raise Exception('No operator handler for {operator!r}'.format(operator=self.operator))
+            raise PlywoodRuntimeError(self.location, scope, 'No operator handler for {operator!r}'.format(operator=self.operator))
         try:
             setter = kwargs['setter']
         except KeyError:
-            raise Exception('Operator {operator!r} cannot set values'.format(operator=self.operator))
+            raise PlywoodRuntimeError(self.location, scope, 'Operator {operator!r} cannot set values'.format(operator=self.operator))
         return setter(self, attr, value, scope)
 
     def set_item(self, attr, value, scope):
         try:
             handler, kwargs = self.OPERATORS[self.operator]
         except KeyError:
-            raise Exception('No operator handler for {operator!r}'.format(operator=self.operator))
+            raise PlywoodRuntimeError(self.location, scope, 'No operator handler for {operator!r}'.format(operator=self.operator))
         try:
             setter = kwargs['setter']
         except KeyError:
-            raise Exception('Operator {operator!r} cannot set values'.format(operator=self.operator))
+            raise PlywoodRuntimeError(self.location, scope, 'Operator {operator!r} cannot set values'.format(operator=self.operator))
         return setter(self, attr, value, scope)
 
     def __repr__(self):
@@ -434,16 +495,26 @@ class PlywoodOperator(PlywoodValue):
 
 class PlywoodCallOperator(PlywoodOperator):
     def __init__(self, left, right, block=None):
-        super(PlywoodCallOperator, self).__init__('()', left, right)
         if not block:
             block = PlywoodBlock(-1, [])
         self.block = block
+        super().__init__('()', left, right)
+
+    def copy(self, instance=None):
+        left = self.left.copy()
+        right = self.right.copy()
+        block = self.block.copy()
+        if instance is None:
+            copy = type(self)(left, right, block)
+        else:
+            copy = instance
+        return super().copy(copy)
 
     def run(self, states, scope):
         if Continue() in states:
             return self.left.get_value(scope).call(states, scope, self.right, self.block)
         else:
-            raise Exception(''.join(states))
+            raise PlywoodRuntimeError(self.location, scope, ''.join(states))
 
     def call(self, states, scope, arguments, block):
         return self.left.get_value(scope).run(states, scope)
@@ -485,13 +556,20 @@ class PlywoodUnaryOperator(PlywoodValue):
         try:
             handler, _ = cls.OPERATORS[operator.operator]
         except KeyError:
-            raise Exception('No operator handler for {operator!r}'.format(self=operator))
+            raise PlywoodRuntimeError(self.location, scope, 'No operator handler for {operator!r}'.format(self=operator))
         return PlywoodWrapper(operator.location, handler(value, scope))
 
     def __init__(self, location, operator, value):
         self.operator = operator
         self.value = value
-        super(PlywoodUnaryOperator, self).__init__(location)
+        super().__init__(location)
+
+    def copy(self, instance=None):
+        if instance is None:
+            copy = type(self)(self.location, self.operator, self.value.copy())
+        else:
+            copy = instance
+        return super().copy(copy)
 
     def get_value(self, scope):
         return self.handle(self, self.value, scope)
@@ -520,7 +598,16 @@ class PlywoodParens(PlywoodValue):
         self.args = list(filter(is_not_kvp, values))
         self.kwargs = list(filter(is_kvp, values))
         self.is_set = is_set
-        super(PlywoodParens, self).__init__(location)
+        super().__init__(location)
+
+    def copy(self, instance=None):
+        if instance is None:
+            copy = type(self)(self.location, [], self.is_set)
+        else:
+            copy = instance
+        copy.args = list(value.copy() for value in self.args)
+        copy.kwargs = list(value.copy() for value in self.kwargs)
+        return super().copy(copy)
 
     def get_value(self, scope):
         return self.args[0].get_value(scope)
@@ -579,7 +666,14 @@ class PlywoodList(PlywoodValue):
     def __init__(self, location, values, force_list=False):
         self.values = values
         self.force_list = force_list
-        super(PlywoodList, self).__init__(location)
+        super().__init__(location)
+
+    def copy(self, instance=None):
+        if instance is None:
+            copy = type(self)(self.location, list(value.copy() for value in self.values), self.force_list)
+        else:
+            copy = instance
+        return super().copy(copy)
 
     def python_value(self, scope):
         return self.values
@@ -618,9 +712,16 @@ class PlywoodXml(PlywoodValue):
         self.arguments = arguments
         self.location = location
 
+    def copy(self, instance=None):
+        if instance is None:
+            copy = type(self)(self.location, self.element.copy(), self.arguments.copy())
+        else:
+            copy = instance
+        return super().copy(copy)
+
     def run(self, states, scope):
         if not hasattr(self, 'location'):
-            raise Exception(repr(self) + ' has no location')
+            raise PlywoodRuntimeError(self.location, scope, repr(self) + ' has no location')
         arguments = PlywoodParens(self.location, [])
         block = PlywoodBlock(self.location, [])
         if Continue() in states:
@@ -634,9 +735,9 @@ class PlywoodXml(PlywoodValue):
     def call(self, states, scope, arguments, block):
         if Continue() in states:
             is_self_closing = not block
-            return [Continue()], PlywoodWrapper(self.location, output_element(scope, self.arguments, block, tag_name=self.element.get_name(), classes=[], is_self_closing=is_self_closing))
+            return [Continue()], PlywoodWrapper(self.location, output_element(scope, self.arguments, block, tag_name=self.element.get_name(), classes=[], id_name=None, is_self_closing=is_self_closing))
         else:
-            raise Exception(''.join(states))
+            raise PlywoodRuntimeError(self.location, scope, ''.join(states))
 
     def __repr__(self):
         return type(self).__name__ + '<' + repr(self.element) + ' ' + ', '.join(repr(v) for v in self.arguments) + '>'
@@ -649,7 +750,14 @@ class PlywoodIndices(PlywoodValue):
     def __init__(self, location, values, force_list):
         self.values = values
         self.force_list = force_list
-        super(PlywoodIndices, self).__init__(location)
+        super().__init__(location)
+
+    def copy(self, instance=None):
+        if instance is None:
+            copy = type(self)(self.location, list(value.copy() for value in self.values), self.force_list)
+        else:
+            copy = instance
+        return super().copy(copy)
 
     def python_value(self, scope):
         if self.force_list:
@@ -673,7 +781,14 @@ class PlywoodSlice(PlywoodValue):
     def __init__(self, start, stop):
         self.start = start
         self.stop = stop
-        super(PlywoodSlice, self).__init__(self.start.location)
+        super().__init__(self.start.location)
+
+    def copy(self, instance=None):
+        if instance is None:
+            copy = type(self)(self.start.copy(), self.stop.copy())
+        else:
+            copy = instance
+        return super().copy(copy)
 
     def python_value(self, scope):
         raise NotImplementedError
@@ -688,7 +803,14 @@ class PlywoodSlice(PlywoodValue):
 class PlywoodDict(PlywoodValue):
     def __init__(self, location, values):
         self.values = values
-        super(PlywoodDict, self).__init__(location)
+        super().__init__(location)
+
+    def copy(self, instance=None):
+        if instance is None:
+            copy = type(self)(self.location, list(value.copy() for value in self.values))
+        else:
+            copy = instance
+        return super().copy(copy)
 
     def python_value(self, scope):
         return dict((kvp.key.python_value(scope), kvp.value.python_value(scope)) for kvp in self.values)
@@ -730,10 +852,18 @@ class PlywoodDict(PlywoodValue):
 class PlywoodCallable(PlywoodValue):
     def __init__(self, fn):
         self.fn = fn
+        super().__init__(location=None)
+
+    def copy(self, instance=None):
+        if instance is None:
+            copy = type(self)(self.fn)
+        else:
+            copy = instance
+        return super().copy(copy)
 
     def run(self, states, scope):
         if not hasattr(self, 'location'):
-            raise Exception(repr(self) + ' has no location')
+            raise PlywoodRuntimeError(self.location, scope, repr(self) + ' has no location')
         arguments = PlywoodParens(self.location, [])
         block = PlywoodBlock(self.location, [])
         if Continue() in states:
@@ -765,9 +895,16 @@ class PlywoodRuntime(PlywoodCallable):
         else:
             accepted_states = accepts
 
-        self.fn = fn
         self.accepts_states = accepted_states
         self.suppress_newline = suppress_newline
+        super().__init__(fn)
+
+    def copy(self, instance=None):
+        if instance is None:
+            copy = type(self)(self.fn, self.accepts_states, self.suppress_newline)
+        else:
+            copy = instance
+        return super().copy(copy)
 
     def call(self, states, scope, arguments, block):
         if any(state in states for state in self.accepts_states):
@@ -781,22 +918,30 @@ class PlywoodRuntime(PlywoodCallable):
 
 class PlywoodHtmlPlugin(PlywoodCallable):
     def __init__(self, fn):
-        self.fn = fn
         self.classes = []
+        self.id_name = None
+        super().__init__(fn)
+
+    def copy(self, instance=None):
+        if instance is None:
+            copy = type(self)(self.fn)
+        else:
+            copy = instance
+        copy.id_name = self.id_name
+        copy.classes.extend(self.classes)
+        return super().copy(copy)
 
     def call(self, states, scope, arguments, block):
-        return [Continue()], PlywoodWrapper(self.location, self.fn(scope, arguments, block, self.classes))
-
-    def copy(self):
-        copy = type(self)(self.fn)
-        copy.classes.extend(self.classes)
-        if hasattr(self, 'location'):
-            copy.location = self.location
-        return copy
+        return [Continue()], PlywoodWrapper(self.location, self.fn(scope, arguments, block, self.classes, id_name=self.id_name))
 
     def get_attr(self, attr, scope):
         copy = self.copy()
         copy.classes.append(attr.get_name())
+        return copy
+
+    def assign_id(self, attr, scope):
+        copy = self.copy()
+        copy.id_name = attr.get_name()
         return copy
 
 
@@ -805,8 +950,15 @@ class PlywoodFunction(PlywoodCallable):
         self.fn = fn
         self.accepts_block = accepts_block
 
+    def copy(self, instance=None):
+        if instance is None:
+            copy = type(self)(self.fn, self.accepts_block)
+        else:
+            copy = instance
+        return super().copy(copy)
+
     def call(self, states, scope, arguments, block):
-        args = (arg.python_value(scope) for arg in arguments.args)
+        args = list(arg.python_value(scope) for arg in arguments.args)
         kwargs = dict(
             (item.key.python_value(scope), item.value.python_value(scope))
                 for item in arguments.kwargs
@@ -818,7 +970,10 @@ class PlywoodFunction(PlywoodCallable):
                 return block.python_value(scope)
             retval = self.fn(inside, *args, **kwargs)
         else:
-            retval = self.fn(*args, **kwargs)
+            try:
+                retval = self.fn(*args, **kwargs)
+            except TypeError as e:
+                raise PlywoodRuntimeError(self.location, scope, "{self!r} raised {e!r}".format(self=self, e=e))
         return [Continue()], PlywoodWrapper(self.location, retval)
 
 

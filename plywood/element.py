@@ -2,7 +2,7 @@ from plywood.exceptions import InvalidArguments
 from plywood.util import entitize
 
 
-def output_element(scope, arguments, block, tag_name, classes, is_self_closing):
+def output_element(scope, arguments, block, tag_name, classes, id_name, is_self_closing):
     args = arguments.args
     kwargs = arguments.kwargs
 
@@ -15,10 +15,9 @@ def output_element(scope, arguments, block, tag_name, classes, is_self_closing):
     kwargs_class = ''
     for item in kwargs:
         key = item.key.python_value(scope)
-        if key in ['class']:
+        if key == 'class':
             value = item.value.python_value(scope)
-            if key == 'class':
-                kwargs_class = value
+            kwargs_class = value
 
     if classes and kwargs_class:
         classes.append(kwargs_class)
@@ -29,9 +28,15 @@ def output_element(scope, arguments, block, tag_name, classes, is_self_closing):
         inside = "\n" + inside.rstrip() + "\n"
 
     attrs = ''
+    if id_name:
+        attrs += ' id="' + id_name + '"'
+
+    if classes:
+        attrs += ' class="' + ' '.join(classes) + '"'
+
     for item in kwargs:
         key = item.key.python_value(scope)
-        if key == 'class':
+        if key in ['class', 'id']:
             continue
         value = item.value.python_value(scope)
         if value is False:
@@ -40,9 +45,6 @@ def output_element(scope, arguments, block, tag_name, classes, is_self_closing):
             value = key
         attrs += ' ' + key
         attrs += '="' + entitize(value) + '"'
-
-    if classes:
-        attrs += ' class="' + ' '.join(classes) + '"'
 
     if is_self_closing:
         return '<' + tag_name + attrs + ' />'

@@ -94,13 +94,14 @@ def boolean_or(left, right, scope):
 
 
 # 'test' | date => date('test')
-# '<test>' | escape | json  # => json(escape('<test>'))
+# '<test>' | entitize | json  # => json(entitize('<test>'))
 @PlywoodOperator.register('|')
 def binary_or(left, right, scope):
     if isinstance(right, PlywoodCallOperator):
-        right.right.args.insert(0, left.get_value(scope))
-        arguments = right.right
-        _, retval = right.run([Continue()], scope)
+        new_op = right.copy()
+        new_op.right.args.insert(0, left.get_value(scope))
+        arguments = new_op.right
+        _, retval = new_op.run([Continue()], scope)
     else:
         arguments = PlywoodParens(right.location, [left])
         block = PlywoodBlock(right.location, [])
@@ -134,6 +135,11 @@ def get_attr(left, right, scope):
 @PlywoodUnaryOperator.register('.')
 def unary_get_attr(value, scope):
     return PlywoodOperator.handle('.', PlywoodVariable(value.location, 'div'), value, scope)
+
+
+@PlywoodOperator.register('@', setter=attr_setter)
+def assign_id(left, right, scope):
+    return left.assign_id(right, scope)
 
 
 @PlywoodUnaryOperator.register('-')
