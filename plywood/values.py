@@ -184,10 +184,6 @@ class PlywoodVariable(PlywoodValue):
     __str__ = lambda self: self.name
 
 
-class uni(str):
-    pass
-
-
 class PlywoodString(PlywoodValue):
     def __init__(self, location, value, triple=False):
         self.triple = triple
@@ -245,6 +241,9 @@ class PlywoodString(PlywoodValue):
 
     def get_name(self):
         return self.value
+
+    def get_value(self, scope):
+        return PlywoodString(location=self.location, value=self.python_value(scope), triple=self.triple)
 
     def python_value(self, scope):
         from .run import Plywood

@@ -45,6 +45,7 @@ BLOCK_TAGS = [
     'tfoot',
     'thead',
     'ul',
+    'main',
 ]
 INLINE_TAGS = [
     'a',
