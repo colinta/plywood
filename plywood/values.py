@@ -34,10 +34,10 @@ class PlywoodValue(object):
 
     def call(self, states, scope, arguments, block):
         if len(block.lines):
-            raise InvalidArguments('{0!s} does not support block argument'.format(self))
+            raise PlywoodRuntimeError(self.location, scope, '{0!s} does not support block argument'.format(self))
         if len(arguments.args) != 1 \
             or len(arguments.kwargs):
-            raise InvalidArguments('{0!s} only accepts one conditional argument'.format(self))
+            raise PlywoodRuntimeError(self.location, scope, '{0!s} only accepts one conditional argument'.format(self))
         retval = str(self.python_value(scope)) + str(arguments.args[0].python_value(scope))
         return [Continue()], PlywoodWrapper(self.location, retval)
 
