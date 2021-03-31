@@ -757,6 +757,11 @@ class PlywoodIndices(PlywoodValue):
             copy = instance
         return super().copy(copy)
 
+    def get_value(self, scope):
+        if len(self.values) > 1:
+            raise PlywoodRuntimeError(self.location, scope, "{self!r} is not a valid index".format(self=self))
+        return self.values[0].get_value(scope)
+
     def python_value(self, scope):
         if self.force_list:
             return [value.python_value(scope) for value in self.values]
@@ -814,14 +819,13 @@ class PlywoodDict(PlywoodValue):
         return dict((kvp.key.python_value(scope), kvp.value.python_value(scope)) for kvp in self.values)
 
     def set_item(self, attr, value, scope):
-        key = attr.python_value(scope)
+        python_key = attr.python_value(scope)
         for kvp in self.values:
-            if kvp.key.python_value(scope) == key:
+            if kvp.key.python_value(scope) == python_key:
                 kvp.value = value
                 return
-        key = attr
+        key = attr.get_value(scope)
         self.values.append(PlywoodKvp(key, value))
-        return
 
     def get_item(self, attr, scope):
         key = attr.python_value(scope)
