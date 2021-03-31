@@ -9,7 +9,7 @@ from .values import (
 
 class PlywoodNumberGrammar(chomsky.Number):
     def __init__(self, parseme=None):
-        super(PlywoodNumberGrammar, self).__init__(parseme)
+        super().__init__(parseme)
         self.location = self.buffer.position
 
     def plywood_value(self):
@@ -28,7 +28,7 @@ class PlywoodNumberGrammar(chomsky.Number):
 
 class PlywoodStringGrammar(chomsky.String):
     def __init__(self, parseme=None):
-        super(PlywoodStringGrammar, self).__init__(parseme)
+        super().__init__(parseme)
         self.location = self.buffer.position
 
     def plywood_value(self):
@@ -44,7 +44,7 @@ class PlywoodVariableGrammar(chomsky.Variable, metaclass=chomsky.VariableGrammar
     ends_with = chomsky.Chars(string.ascii_letters + '_:-' + string.digits, min=0) + chomsky.PrevIsNot(chomsky.L('-') | chomsky.L(':'))
 
     def __init__(self, parseme=None):
-        super(PlywoodVariableGrammar, self).__init__(parseme)
+        super().__init__(parseme)
         self.location = self.buffer.position
 
     def plywood_value(self):
@@ -56,7 +56,7 @@ class PlywoodOperatorGrammar(chomsky.Grammar):
         if parseme == '[]':
             self.parsed = '[]'
         else:
-            super(PlywoodOperatorGrammar, self).__init__(parseme)
+            super().__init__(parseme)
             self.location = self.buffer.position
 
     grammar = chomsky.Any(

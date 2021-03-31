@@ -4,7 +4,7 @@ from chomsky import ParseException
 class CompilationError(Exception):
     def __init__(self, buffer, message):
         self.buffer = buffer
-        super(CompilationError, self).__init__(message)
+        super().__init__(message)
 
 
 class IndentError(CompilationError):
@@ -20,7 +20,7 @@ class PlywoodRuntimeError(Exception):
         self.location = location
         self.scope = scope
         self.message = message
-        super(PlywoodRuntimeError, self).__init__()
+        super().__init__()
 
     def __str__(self):
         input = self.scope['__input']
@@ -39,7 +39,7 @@ class PlywoodRuntimeError(Exception):
 class KeyError(PlywoodRuntimeError):
     def __init__(self, location, scope, name):
         self.name = name
-        super(KeyError, self).__init__(location, scope, 'No value for {!r}'.format(name))
+        super().__init__(location, scope, 'No value for {!r}'.format(name))
 
 
 class InvalidArguments(Exception):
