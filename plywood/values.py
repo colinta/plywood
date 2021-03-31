@@ -269,7 +269,6 @@ class PlywoodString(PlywoodValue):
                 consuming = False
                 was_close_bracket = False
                 inside = PlywoodString.unindent(inside)
-                scope['__input'] = inside
                 retval += Plywood(inside).run(context, runtime).rstrip()
                 inside = ''
             elif consuming and c == '}':
