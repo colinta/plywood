@@ -23,6 +23,7 @@ def include(states, scope, arguments, block):
         context = scope['self'].python_value(scope)
     else:
         context = scope['self']
+
     if len(arguments.kwargs):
         kwargs = dict(
             (item.key.get_name(), item.value)
@@ -35,6 +36,11 @@ def include(states, scope, arguments, block):
                 delete_scope.append(key)
             context[key] = value
 
+    if '__runtime' in scope:
+        runtime = scope['__runtime']
+    else:
+        runtime = PlywoodEnv({'separator': ' '})
+
     template_name = arguments.args[0].python_value(scope)
     found = False
     for path in scope['__paths']:
@@ -45,8 +51,7 @@ def include(states, scope, arguments, block):
             with open(template_path) as f:
                 input = f.read()
                 # scope is not pushed/popped - `include` adds its variables to the local scope.
-                scope['__input'] = input
-                retval = Plywood(input).run(context, scope['__runtime'])
+                retval = Plywood(input).run(context, runtime)
             break
     if not found:
         raise Exception('Could not find template: {0!r}'.format(template_name))

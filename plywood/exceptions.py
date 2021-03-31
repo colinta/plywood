@@ -23,7 +23,7 @@ class PlywoodRuntimeError(Exception):
         super().__init__()
 
     def __str__(self):
-        input = self.scope['__input']
+        input = self.scope.get_input()
         line_no, prev, line, next = runtime_context(input, self.location)
 
         output = "{}\n".format(self.message)
@@ -79,6 +79,7 @@ def runtime_line(input, location):
         if input[line_start] == "\n" or line_start == -1:
             line_start += 1
             break
+
     while line_end < len(input):
         try:
             if input[line_end] == "\n":

@@ -52,12 +52,13 @@ class Plywood(object):
 
     def run(self, context, runtime):
         parsed = self.compile()
-        runtime.scope['__input'] = self.input
+        runtime.scope.push_input(self.input)
         runtime.scope['self'] = Scope(context)
         try:
             retval = parsed.python_value(runtime.scope)
         except BreakException as e:
             retval = e.retval
+        runtime.scope.pop_input()
         return retval
 
     def compile(self):

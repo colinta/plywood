@@ -8,6 +8,18 @@ class Scope(object):
             self.values = values
         self.restore_scope = [{}]
         self.delete_scope = [[]]
+        self.input = ''
+        self.input_stack = []
+
+    def get_input(self):
+        return self.input
+
+    def push_input(self, input):
+        self.input_stack.append(self.input)
+        self.input = input
+
+    def pop_input(self):
+        self.input = self.input_stack.pop()
 
     def is_tracking(self, key):
         return key in self.delete_scope[-1] and key in self.restore_scope[-1]
