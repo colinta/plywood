@@ -1,10 +1,10 @@
 '''
 Implements a ``def`` keyword.
 '''
-from plywood.env import PlywoodEnv
+from plywood.env import PlywoodEnv, PlywoodFunction
 from plywood.values import PlywoodCallOperator, PlywoodVariable, PlywoodOperator, PlywoodRuntime
 from plywood.runtime import Continue
-from plywood.exceptions import InvalidArguments
+from plywood.exceptions import InvalidArguments, ReturnException
 
 
 @PlywoodEnv.register_runtime('def')
@@ -82,7 +82,15 @@ def _def(states, scope, arguments, block):
 
         if local_arglist:
             raise InvalidArguments('Unassigned values: {0}'.format(', '.join(local_arglist)))
-        retval = block.get_value(called_scope)
+
+        def return_function(arg):
+            raise ReturnException(arg)
+
+        called_scope['return'] = PlywoodFunction(return_function)
+        try:
+            retval = block.get_value(called_scope)
+        except ReturnException as e:
+            retval = e.retval
         called_scope.pop()
         return [Continue()], retval
     the_function.__name__ = function_name

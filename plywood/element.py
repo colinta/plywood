@@ -39,7 +39,7 @@ def output_element(scope, arguments, block, tag_name, classes, id_name, is_self_
         if key in ['class', 'id']:
             continue
         value = item.value.python_value(scope)
-        if value is False:
+        if value is False or value is None:
             continue
         elif value is True:
             value = key

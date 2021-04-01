@@ -56,6 +56,11 @@ class ContinueException(Exception):
         self.retval = retval
 
 
+class ReturnException(Exception):
+    def __init__(self, retval=''):
+        self.retval = retval
+
+
 def runtime_context(input, location):
     line_no, line_start, line_end = runtime_line(input, location)
     line = input[line_start:line_end]

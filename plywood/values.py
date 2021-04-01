@@ -157,7 +157,7 @@ class PlywoodVariable(PlywoodValue):
         try:
             retval = scope[self.name]
         except KeyError:
-            raise PlywoodKeyError(self.location, scope, self.name)
+            retval = PlywoodPythonValue(self.location, None)
 
         if not isinstance(retval, PlywoodValue):
             retval = PlywoodWrapper(self.location, retval)
@@ -832,7 +832,7 @@ class PlywoodDict(PlywoodValue):
         for kvp in self.values:
             if kvp.key.python_value(scope) == key:
                 return kvp.value
-        raise KeyError(key)
+        return None
 
     def set_attr(self, attr, value, scope):
         return self.set_item(PlywoodString(value.location, attr.get_name()), value, scope)
@@ -842,7 +842,7 @@ class PlywoodDict(PlywoodValue):
         for kvp in self.values:
             if kvp.key.python_value(scope) == key:
                 return kvp.value
-        raise KeyError(key)
+        return None
 
     def __repr__(self):
         return type(self).__name__ + '{' + ', '.join(repr(v) for v in self.values) + '}'
