@@ -2,6 +2,7 @@ from chomsky import Whitespace, ParseException
 from .runtime import Runtime, Continue, Skip, SuppressNewline, SuppressOneNewline
 from .exceptions import KeyError as PlywoodKeyError, BreakException, ContinueException, InvalidArguments, PlywoodRuntimeError
 from .element import output_element
+from .util import uniq_by
 
 
 class PlywoodValue(object):
@@ -589,12 +590,18 @@ class PlywoodParens(PlywoodValue):
                 key = PlywoodString(value.location, value.left.name)
                 return PlywoodKvp(key, value.right, kwarg=True)
             return value
+        def kvp_name(value):
+            if isinstance(value.key, PlywoodVariable):
+                return value.name
+            if isinstance(value.key, PlywoodString):
+                return value.key.value
+            return None
 
         is_kvp = lambda value: isinstance(value, PlywoodKvp)
         is_not_kvp = lambda value: not isinstance(value, PlywoodKvp)
         values = list(map(convert_assign, values))
         self.args = list(filter(is_not_kvp, values))
-        self.kwargs = list(filter(is_kvp, values))
+        self.kwargs = list(uniq_by(filter(is_kvp, values), kvp_name))
         self.is_set = is_set
         super().__init__(location)
 

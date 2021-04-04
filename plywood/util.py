@@ -35,4 +35,17 @@ def deentitize(text):
     return text
 
 
+def uniq_by(seq, uniq_by):
+    # order preserving
+    if uniq_by is None:
+        def uniq_by(x): return x
+    seen = {}
+    result = []
+    for item in seq:
+        marker = uniq_by(item)
+        if marker in seen: continue
+        seen[marker] = 1
+        result.append(item)
+    return result
+
 __all__ = ['entitize', 'deentitize']
