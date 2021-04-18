@@ -464,7 +464,7 @@ class Plywood(object):
  # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
     TESTERS = {
         'eof': StringEnd(),
-        'eol': (Literal('\n') | '\r\n' | '\r' | '#' | StringEnd),
+        'eol': (Literal('\n') | '\r\n' | '\r' | '#' | StringEnd()),
         'comment': Literal('#'),
         'from': Literal('from'),
 
