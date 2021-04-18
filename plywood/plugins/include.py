@@ -42,19 +42,26 @@ def include(states, scope, arguments, block):
         env = PlywoodEnv({'separator': ' '})
 
     template_name = arguments.args[0].python_value(scope)
-    found = False
+    plywood = None
     for path in scope['__paths']:
         template_path = os.path.join(path, template_name) + '.ply'
-        if os.path.exists(template_path):
-            found = True
+        if template_path in env.includes:
+            plywood = env.includes[template_path]
+        elif os.path.exists(template_path):
             retval = ''
             with open(template_path) as f:
                 input = f.read()
+                plywood = Plywood(input)
+                env.includes[template_path] = plywood
                 # scope is not pushed/popped - `include` adds its variables to the local scope.
-                retval = Plywood(input).run(context, runtime)
+
+        if plywood:
             break
-    if not found:
+
+    if not plywood:
         raise Exception('Could not find template: {0!r}'.format(template_name))
+
+    retval = plywood.run(context, env)
 
     if len(arguments.kwargs):
         for key, value in restore_scope.items():

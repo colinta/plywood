@@ -15,6 +15,8 @@ class PlywoodEnv(object):
     def __init__(self, options={}):
         self.options = options
         self.scope = scope = Scope()
+        self.includes = {}
+
         scope.update(self.GLOBAL)
 
         scope['__env'] = self
