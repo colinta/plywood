@@ -409,7 +409,11 @@ class PlywoodOperator(PlywoodValue):
             handler, _ = cls.OPERATORS[operator]
         except KeyError:
             raise PlywoodRuntimeError(self.location, scope, 'No operator handler for {operator!r}'.format(operator=operator))
-        return PlywoodWrapper(left.location, handler(left, right, scope))
+        try:
+            return PlywoodWrapper(left.location, handler(left, right, scope))
+        except Exception as e:
+            message = str(e)
+        raise PlywoodRuntimeError(left.location, scope, message)
 
     def __init__(self, operator, left, right):
         self.operator = operator
