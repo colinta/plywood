@@ -1,6 +1,6 @@
 from pytest import raises
 from chomsky import ParseException
-from plywood.exceptions import KeyError as PlywoodKeyError
+from plywood.exceptions import PlywoodRuntimeError
 from plywood import (
     plywood, Plywood,
     )
@@ -9,13 +9,14 @@ from plywood import (
 def test_parens():
     code = """
 a = 'a'
-b
+b + a
 # c"""
-    with raises(PlywoodKeyError) as e:
-        plywood(code, defaults=False)
-    assert str(e.value) == """No value for 'b'
+    with raises(PlywoodRuntimeError) as e:
+        result = plywood(code, defaults=False)
+        print(result)
+    assert str(e.value) == """unsupported operand type(s) for +: 'NoneType' and 'str'
 At line 3:
     a = 'a'
->>> b
+>>> b + a
     # c
 """

@@ -15,7 +15,7 @@ def test_example_1():
         'persons': ['Joey', 'Joe', 'Shabbadoo'],
         }
     actual = plywood(input, vals, indent='  ')
-    assert desired == actual
+    assert actual == desired
 
 
 def test_example_2():
@@ -28,4 +28,4 @@ def test_example_2():
         'author': 'colin gray',
         }
     actual = plywood(input, vals, indent='  ')
-    assert desired == actual
+    assert actual == desired

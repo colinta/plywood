@@ -190,7 +190,7 @@ class PlywoodString(PlywoodValue):
         self.triple = triple
         self.lang = None
         if triple:
-            # unindent
+            # unindent, and parse language
             lang, value = PlywoodString.unindent(value, return_lang=True)
             self.lang = lang
 
@@ -244,7 +244,7 @@ class PlywoodString(PlywoodValue):
         return self.value
 
     def get_value(self, scope):
-        return PlywoodString(location=self.location, value=self.python_value(scope), triple=self.triple)
+        return self
 
     def python_value(self, scope):
         from .run import Plywood
