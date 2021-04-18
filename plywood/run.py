@@ -31,8 +31,8 @@ from .scope import Scope
 
 
 def plywood(input, context={}, **options):
-    runtime = PlywoodEnv(options)
-    return Plywood(input).run(context, runtime)
+    env = PlywoodEnv(options)
+    return Plywood(input).run(context, env)
 
 
 class Plywood(object):

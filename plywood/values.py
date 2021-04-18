@@ -107,7 +107,7 @@ class PlywoodBlock(PlywoodValue):
                         retval += str(cmd_ret)
                         suppress_newline = SuppressNewline() in states or SuppressOneNewline() in states
                         if not self.inline and not suppress_newline:
-                            retval += scope['__runtime'].options['separator']
+                            retval += scope['__env'].options['separator']
                         try:
                             states.remove(SuppressOneNewline())
                         except ValueError:
@@ -258,10 +258,10 @@ class PlywoodString(PlywoodValue):
         consuming = False
         was_close_bracket = False
         inside = ''
-        if '__runtime' in scope:
-            runtime = scope['__runtime']
+        if '__env' in scope:
+            env = scope['__env']
         else:
-            runtime = PlywoodEnv({'separator': ' '})
+            env = PlywoodEnv({'separator': ' '})
         scope.push()
         context = scope.get('self', {})
         while index < len(original):
@@ -270,7 +270,7 @@ class PlywoodString(PlywoodValue):
                 consuming = False
                 was_close_bracket = False
                 inside = PlywoodString.unindent(inside)
-                retval += Plywood(inside).run(context, runtime).rstrip()
+                retval += Plywood(inside).run(context, env).rstrip()
                 inside = ''
             elif consuming and c == '}':
                 was_close_bracket = True
@@ -979,7 +979,7 @@ class PlywoodFunction(PlywoodCallable):
         if self.accepts_block:
             def inside(indent=False):
                 if indent:
-                    return scope['__runtime'].indent(block.python_value(scope))
+                    return scope['__env'].indent(block.python_value(scope))
                 return block.python_value(scope)
             retval = self.fn(inside, *args, **kwargs)
         else:

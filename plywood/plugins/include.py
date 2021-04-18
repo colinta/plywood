@@ -36,10 +36,10 @@ def include(states, scope, arguments, block):
                 delete_scope.append(key)
             context[key] = value
 
-    if '__runtime' in scope:
-        runtime = scope['__runtime']
+    if '__env' in scope:
+        env = scope['__env']
     else:
-        runtime = PlywoodEnv({'separator': ' '})
+        env = PlywoodEnv({'separator': ' '})
 
     template_name = arguments.args[0].python_value(scope)
     found = False

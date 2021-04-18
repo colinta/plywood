@@ -17,7 +17,7 @@ class PlywoodEnv(object):
         self.scope = scope = Scope()
         scope.update(self.GLOBAL)
 
-        scope['__runtime'] = self
+        scope['__env'] = self
         options.setdefault('separator', "\n")
 
         add_indent = options.get('indent', '    ')

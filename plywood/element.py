@@ -24,7 +24,7 @@ def output_element(scope, arguments, block, tag_name, classes, id_name, is_self_
 
     inside = block.python_value(scope)
     if not block.inline and inside:
-        inside = scope['__runtime'].indent(inside)
+        inside = scope['__env'].indent(inside)
         inside = "\n" + inside.rstrip() + "\n"
 
     attrs = ''
@@ -54,5 +54,5 @@ def output_element(scope, arguments, block, tag_name, classes, id_name, is_self_
         if args:
             inside = ''.join(arg.python_value(scope) for arg in args)
             if len(args) > 1:
-                inside = scope['__runtime'].indent(inside)
+                inside = scope['__env'].indent(inside)
         return tag_open + inside + tag_close
