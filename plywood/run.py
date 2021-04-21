@@ -26,7 +26,7 @@ from .values import (
     PlywoodDict,
     )
 from plywood.env import PlywoodEnv
-from .exceptions import IndentError, IndentBreak, BreakException, CompilationError, PlywoodRuntimeError
+from .exceptions import IndentError, IndentBreak, ReturnException, CompilationError, PlywoodRuntimeError
 from .scope import Scope
 
 
@@ -56,7 +56,7 @@ class Plywood(object):
         runtime.scope['self'] = Scope(context)
         try:
             retval = parsed.python_value(runtime.scope)
-        except BreakException as e:
+        except ReturnException as e:
             retval = e.retval
         runtime.scope.pop_input()
         return retval
